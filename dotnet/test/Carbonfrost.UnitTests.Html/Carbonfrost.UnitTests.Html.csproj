@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../Build.props" />
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <KeyOriginatorFile>../../F5NonCommercial.snk</KeyOriginatorFile>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="../../lib/Typedescriptor.Metadata.dll" />
+    <Reference Include="../../lib/Carbonfrost.Commons.SharedRuntime.dll" />
+    <Reference Include="../../lib/Carbonfrost.Commons.Spec.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Carbonfrost.Commons.Core" Version="0.2.1" />
+    <PackageReference Include="Carbonfrost.Commons.Core.Runtime.Expressions" Version="0.1.0" />
+    <PackageReference Include="Carbonfrost.Commons.Web.Dom" Version="0.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Carbonfrost.Commons.Html\Carbonfrost.Commons.Html.csproj" />
+  </ItemGroup>
+</Project>
