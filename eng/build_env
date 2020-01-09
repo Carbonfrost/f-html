@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#
+# Prints out environment variables for the build environment.  You normally
+# source these in
+#
+set -e
+
+tag_version="$(git describe --tags --exact-match 2>/dev/null | tr -d 'v')"
+
+if [[ -z "$tag_version" ]]; then
+  tag_version="0.0.0"
+fi
+
+echo export ENG_GIT_VERSION="$tag_version"
+echo export ENG_GIT_HEAD_REVISION="$(git rev-parse HEAD)"
+echo export ENG_GIT_BUILD_DATE="$(date +%Y-%m-%dT%H:%M:%S)"
