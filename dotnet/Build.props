@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <Version>$(ENG_GIT_VERSION)</Version>
+    <Version>$(ENG_VERSION)</Version>
     <KeyOriginatorFile>../../F5NonCommercial.snk</KeyOriginatorFile>
   </PropertyGroup>
 
@@ -17,7 +17,7 @@
 
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>[share:License]</_Parameter1>
-      <_Parameter2>http://www.apache.org/licenses/LICENSE-2.0</_Parameter2>
+      <_Parameter2>https://www.apache.org/licenses/LICENSE-2.0</_Parameter2>
     </AssemblyAttribute>
 
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
