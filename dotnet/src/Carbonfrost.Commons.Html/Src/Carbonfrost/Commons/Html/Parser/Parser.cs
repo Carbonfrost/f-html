@@ -41,6 +41,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html.Parser {
 
@@ -91,7 +92,7 @@ namespace Carbonfrost.Commons.Html.Parser {
             return treeBuilder.Parse(html, baseUri, HtmlParseErrorCollection.NoTracking());
         }
 
-        public static IList<HtmlNode> ParseFragment(String fragmentHtml, HtmlElement context, Uri baseUri) {
+        public static IList<DomNode> ParseFragment(String fragmentHtml, HtmlElement context, Uri baseUri) {
             HtmlTreeBuilder treeBuilder = new HtmlTreeBuilder();
             return treeBuilder.ParseFragment(fragmentHtml, context, baseUri, HtmlParseErrorCollection.NoTracking());
         }
@@ -99,10 +100,10 @@ namespace Carbonfrost.Commons.Html.Parser {
         public static HtmlDocument ParseBodyFragment(String bodyHtml, Uri baseUri) {
             HtmlDocument doc = HtmlDocument.CreateShell(baseUri);
             HtmlElement body = doc.Body;
-            IList<HtmlNode> nodeList = ParseFragment(bodyHtml, body, baseUri);
-            HtmlNode[] nodes = nodeList.ToArray(); // the node list gets modified when re-parented
-            foreach (HtmlNode node in nodes) {
-                body.AppendChild(node);
+            var nodeList = ParseFragment(bodyHtml, body, baseUri);
+            var nodes = nodeList.ToArray(); // the node list gets modified when re-parented
+            foreach (var node in nodes) {
+                body.Append(node);
             }
             return doc;
         }

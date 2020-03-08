@@ -1,13 +1,11 @@
 //
-// - ParserCommentTest.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,9 +36,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
+using System.Linq;
 using Carbonfrost.Commons.Html;
 using Carbonfrost.Commons.Spec;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.UnitTests.Html.Parser {
 
@@ -59,26 +58,25 @@ namespace Carbonfrost.UnitTests.Html.Parser {
             HtmlDocument doc = HtmlDocument.Parse(html);
 
             HtmlElement body = doc.Body;
-            HtmlComment comment = (HtmlComment) body.ChildNode(1); // comment should not be sub of img, as it's an empty tag
-            Assert.Equal(" <table><tr><td></table> ", comment.Text);
-            HtmlElement p = body.Child(1);
+            var comment = (DomComment) body.ChildNode(1); // comment should not be sub of img, as it's an empty tag
+            Assert.Equal(" <table><tr><td></table> ", comment.Data);
+            var p = body.Child(1);
             HtmlText text = (HtmlText) p.ChildNodes[0];
-            Assert.Equal("Hello", text.RawText);
+            Assert.Equal("Hello", text.Data);
         }
 
         [Fact]
         public void parses_unterminated_comments() {
             string html = "<p>Hello<!-- <tr><td>";
             HtmlDocument doc = HtmlDocument.Parse(html);
-            HtmlElement p = doc.GetElementsByTag("p")[0];
+            var p = doc.GetElementsByTagName("p").ToList()[0];
 
             // UNDONE Assert.Equal("Hello", p.next());
             HtmlText text = (HtmlText) p.ChildNodes[0];
 
-            Assert.Equal("Hello", text.RawText);
-            HtmlComment comment = (HtmlComment) p.ChildNodes[1];
-            Assert.Equal(" <tr><td>", comment.Text);
+            Assert.Equal("Hello", text.Data);
+            var comment = (DomComment) p.ChildNodes[1];
+            Assert.Equal(" <tr><td>", comment.Data);
         }
-
     }
 }

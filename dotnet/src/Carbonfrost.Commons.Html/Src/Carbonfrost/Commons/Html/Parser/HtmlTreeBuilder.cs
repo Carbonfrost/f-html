@@ -1,13 +1,11 @@
 //
-// - HtmlTreeBuilder.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,6 +41,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html.Parser {
 
@@ -55,7 +54,7 @@ namespace Carbonfrost.Commons.Html.Parser {
         private HtmlElement headElement; // the current head element
         private HtmlElement formElement; // the current form element
         private HtmlElement contextElement; // fragment parse context -- could be null even if fragment parsing
-        private DescendableLinkedList<HtmlElement> formattingElements = new DescendableLinkedList<HtmlElement>(); // active (open) formatting elements
+        private DescendableLinkedList<DomContainer> formattingElements = new DescendableLinkedList<DomContainer>(); // active (open) formatting elements
         private List<Token.Character> pendingTableCharacters = new List<Token.Character>(); // chars in table to be shifted out
 
         private bool _framesetOk = true; // if ok to go into frameset
@@ -98,7 +97,7 @@ namespace Carbonfrost.Commons.Html.Parser {
             return base.Parse(input, baseUri, errors);
         }
 
-        public IList<HtmlNode> ParseFragment(string inputFragment, HtmlElement context, Uri baseUri, HtmlParseErrorCollection errors) {
+        public IList<DomNode> ParseFragment(string inputFragment, HtmlElement context, Uri baseUri, HtmlParseErrorCollection errors) {
             // context may be null
             InitialiseParse(inputFragment, baseUri, errors);
             contextElement = context;
@@ -106,11 +105,12 @@ namespace Carbonfrost.Commons.Html.Parser {
             HtmlElement root = null;
 
             if (context != null) {
-                if (context.OwnerDocument != null) // quirks setup:
-                    doc.QuirksMode = context.OwnerDocument.QuirksMode;
+                if (context.OwnerDocument != null) { // quirks setup:
+                    doc.QuirksMode = context.OwnerDocument.GetQuirksMode();
+                }
 
                 // initialise the tokeniser state:
-                string contextTag = context.Tag.Name;
+                string contextTag = context.NodeName;
 
                 switch (contextTag) {
                     case "title":
@@ -143,8 +143,9 @@ namespace Carbonfrost.Commons.Html.Parser {
                         break;
                 }
 
-                root = new HtmlElement(Tag.ValueOf("html"), baseUri);
-                doc.AppendChild(root);
+                root = (HtmlElement) doc.CreateElement("html");
+                root.BaseUri = baseUri;
+                doc.Append(root);
                 stack.AddFirst(root);
                 ResetInsertionMode();
                 // TODO: setup form element to nearest form on context (up ancestor chain)
@@ -211,15 +212,13 @@ namespace Carbonfrost.Commons.Html.Parser {
                 return el;
             }
 
-
-            HtmlElement elx = new HtmlElement(
-                this.TagLibrary.GetTag(startTag.Name), baseUri, startTag.Attributes);
+            HtmlElement elx = new HtmlElement(startTag.Name, baseUri, startTag.Attributes);
             Insert(elx);
             return elx;
         }
 
         public HtmlElement Insert(string startTagName) {
-            HtmlElement el = new HtmlElement(Tag.ValueOf(startTagName), baseUri);
+            HtmlElement el = new HtmlElement(startTagName, baseUri);
             Insert(el);
             return el;
         }
@@ -231,15 +230,18 @@ namespace Carbonfrost.Commons.Html.Parser {
 
         public HtmlElement InsertEmpty(Token.StartTag startTag) {
             // TODO Use the semantic element here (via the factory)
-            Tag tag = Tag.ValueOf(startTag.Name);
-            HtmlElement el = new HtmlElement(tag, baseUri, startTag.Attributes);
+            HtmlElementDefinition tag = TagLibrary.GetTag(startTag.Name);
+            HtmlElement el = new HtmlElement(startTag.Name, baseUri, startTag.Attributes);
 
             InsertNode(el);
             if (startTag.IsSelfClosing) {
                 tokeniser.AcknowledgeSelfClosingFlag();
 
-                if (!this.TagLibrary.IsKnownTag(tag)) // unknown tag, remember this is self closing for output
-                    tag.selfClosing = true;
+                // TODO This change to the schema is not ideal
+                if (!tag.IsReadOnly && tag.IsUnknownTag) {// unknown tag, remember this is self closing for output
+                    tag.IsSelfClosing = true;
+                    tag.IsEmpty = true;
+                }
             }
 
             return el;
@@ -247,37 +249,37 @@ namespace Carbonfrost.Commons.Html.Parser {
 
         public void Insert(Token.Comment commentToken) {
             if (commentToken.IsBogus) {
-                HtmlProcessingInstruction pi = new HtmlProcessingInstruction(commentToken, baseUri);
+                var pi = HtmlProcessingInstruction.Create(commentToken, baseUri);
                 InsertNode(pi);
 
             } else {
-                HtmlComment comment = new HtmlComment(commentToken.Data, baseUri);
+                var comment = doc.CreateComment(commentToken.Data);
                 InsertNode(comment);
             }
         }
 
         public void Insert(Token.Character characterToken) {
-            HtmlNode node;
+            DomNode node;
             // characters in script and style go in as datanodes, not text nodes
-            if (CurrentElement.Tag.Name.In("script", "style"))
+            if (CurrentElement.NodeName.In("script", "style"))
                 node = new HtmlText(characterToken.Data, baseUri, true);
             else
                 node = new HtmlText(characterToken.Data, baseUri);
 
-            CurrentElement.AppendChild(node); // doesn't use insertNode, because we don't foster these; and will always have a stack.
+            CurrentElement.Append(node); // doesn't use insertNode, because we don't foster these; and will always have a stack.
         }
 
-        private void InsertNode(HtmlNode node) {
+        private void InsertNode(DomNode node) {
             // if the stack hasn't been set up yet, elements (doctype, comments) go into the doc
             if (stack.Count == 0)
-                doc.AppendChild(node);
+                doc.Append(node);
             else if (IsFosterInserts())
                 InsertInFosterParent(node);
             else
-                CurrentElement.AppendChild(node);
+                CurrentElement.Append(node);
         }
 
-        public HtmlElement Pop() {
+        public DomContainer Pop() {
             // TODO - dev, remove validation check
             if (stack.Last.Value.NodeName.Equals("td") && !_state.Name.Equals("InCellState")) {
                 HtmlWarning.PoppingTDNotInCell();
@@ -287,7 +289,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                 HtmlWarning.PoppingHtml();
             }
 
-            HtmlElement last = stack.Last.Value;
+            var last = stack.Last.Value;
             stack.RemoveLast();
             return last;
         }
@@ -296,24 +298,24 @@ namespace Carbonfrost.Commons.Html.Parser {
             stack.AddFirst(element);
         }
 
-        public DescendableLinkedList<HtmlElement> Stack {
+        public DescendableLinkedList<DomContainer> Stack {
             get {
                 return stack;
             }
         }
 
-        public bool OnStack(HtmlElement el) {
+        public bool OnStack(DomContainer el) {
             return IsElementInQueue(stack, el);
         }
 
-        private bool IsElementInQueue(DescendableLinkedList<HtmlElement> queue, HtmlElement element) {
+        private bool IsElementInQueue(DescendableLinkedList<DomContainer> queue, DomContainer element) {
             return queue.Contains(element);
         }
 
-        public HtmlElement GetFromStack(string elName) {
+        public DomContainer GetFromStack(string elName) {
             var it = stack.GetDescendingEnumerator();
             while (it.MoveNext()) {
-                HtmlElement next = it.Current;
+                var next = it.Current;
 
                 if (next.NodeName.Equals(elName)) {
                     return next;
@@ -322,7 +324,7 @@ namespace Carbonfrost.Commons.Html.Parser {
             return null;
         }
 
-        public bool RemoveFromStack(HtmlElement el) {
+        public bool RemoveFromStack(DomContainer el) {
             return stack.Remove(el);
         }
 
@@ -338,7 +340,7 @@ namespace Carbonfrost.Commons.Html.Parser {
             }
         }
 
-        public void PopStackToClose(params string[] elNames) {
+        public void PopStackToClose(IReadOnlyCollection<string> elNames) {
             while (stack.Last != null) {
                 if (elNames.Contains(stack.Last.Value.NodeName)) {
                     stack.RemoveLast();
@@ -374,9 +376,9 @@ namespace Carbonfrost.Commons.Html.Parser {
         }
 
         private void ClearStackToContext(params string[] nodeNames) {
-            LinkedListNode<HtmlElement> node = stack.Last;
+            var node = stack.Last;
             while (node != null) {
-                HtmlElement next = node.Value;
+                var next = node.Value;
                 if (nodeNames.Contains(next.NodeName) || next.NodeName.Equals("html")) {
                     break;
 
@@ -387,12 +389,12 @@ namespace Carbonfrost.Commons.Html.Parser {
             }
         }
 
-        public HtmlElement AboveOnStack(HtmlElement el) {
+        public DomContainer AboveOnStack(DomContainer el) {
             if (!OnStack(el))
                 HtmlWarning.ElementShouldBeOnStack();
             var it = stack.GetDescendingEnumerator();
             while (it.MoveNext()) {
-                HtmlElement next = it.Current;
+                var next = it.Current;
 
                 if (next == el) {
                     it.MoveNext();
@@ -402,15 +404,15 @@ namespace Carbonfrost.Commons.Html.Parser {
             return null;
         }
 
-        public void InsertOnStackAfter(HtmlElement after, HtmlElement in2) {
+        public void InsertOnStackAfter(DomContainer after, DomContainer in2) {
             stack.AddAfter(stack.Find(after), in2);
         }
 
-        public void ReplaceOnStack(HtmlElement out2, HtmlElement in2) {
+        public void ReplaceOnStack(DomContainer out2, DomContainer in2) {
             ReplaceInQueue(stack, out2, in2);
         }
 
-        private void ReplaceInQueue(DescendableLinkedList<HtmlElement> queue, HtmlElement out2, HtmlElement in2) {
+        private void ReplaceInQueue(DescendableLinkedList<DomContainer> queue, DomContainer out2, DomContainer in2) {
             queue.AddAfter(queue.Find(out2), in2);
             queue.Remove(out2);
         }
@@ -420,7 +422,7 @@ namespace Carbonfrost.Commons.Html.Parser {
             var it = stack.GetDescendingEnumerator();
 
             while (it.MoveNext()) {
-                HtmlElement node = it.Current;
+                var node = it.Current;
                 if (stack.FindLast(node).Previous == null) {
                     last = true;
                     node = contextElement;
@@ -486,10 +488,10 @@ namespace Carbonfrost.Commons.Html.Parser {
             return InSpecificScope(new string[]{targetName}, baseTypes, extraTypes);
         }
 
-        private bool InSpecificScope(string[] targetNames, string[] baseTypes, string[] extraTypes) {
-            IEnumerator<HtmlElement> it = stack.GetDescendingEnumerator();
+        private bool InSpecificScope(IReadOnlyCollection<string> targetNames, ICollection<string> baseTypes, ICollection<string> extraTypes) {
+            IEnumerator<DomContainer> it = stack.GetDescendingEnumerator();
             while (it.MoveNext()) {
-                HtmlElement el = it.Current;
+                var el = it.Current;
                 string elName = el.NodeName;
                 if (targetNames.Contains(elName))
                     return true;
@@ -505,7 +507,7 @@ namespace Carbonfrost.Commons.Html.Parser {
             return false;
         }
 
-        public bool InScope(string[] targetNames) {
+        public bool InScope(IReadOnlyCollection<string> targetNames) {
             return InSpecificScope(targetNames, new string[]{"applet", "caption", "html", "table", "td", "th", "marquee", "object"}, null);
         }
 
@@ -532,10 +534,10 @@ namespace Carbonfrost.Commons.Html.Parser {
         }
 
         public bool InSelectScope(string targetName) {
-            IEnumerator<HtmlElement> it = stack.GetDescendingEnumerator();
+            IEnumerator<DomContainer> it = stack.GetDescendingEnumerator();
 
             while (it.MoveNext()) {
-                HtmlElement el = it.Current;
+                var el = it.Current;
                 string elName = el.NodeName;
                 if (elName.Equals(targetName)) {
                     return true;
@@ -591,19 +593,20 @@ namespace Carbonfrost.Commons.Html.Parser {
          */
         public void GenerateImpliedEndTags(string excludeTag) {
             while ((excludeTag != null && !CurrentElement.NodeName.Equals(excludeTag)) &&
-                   StringUtil.In(CurrentElement.NodeName, "dd", "dt", "li", "option", "optgroup", "p", "rp", "rt"))
+                   StringSet.Create("dd dt li option optgroup p rp rt").Contains(CurrentElement.NodeName)) {
                 Pop();
+            }
         }
 
         public void GenerateImpliedEndTags() {
             GenerateImpliedEndTags(null);
         }
 
-        public bool IsSpecial(HtmlElement el) {
+        public bool IsSpecial(DomContainer el) {
             // TODO: mathml's mi, mo, mn
             // TODO: svg's foreigObject, desc, title
             string name = el.NodeName;
-            return StringUtil.Hash(@"address applet area article aside base basefont bgsound
+            return StringSet.Create(@"address applet area article aside base basefont bgsound
                                    blockquote body br button caption center col colgroup command dd
                                    details dir div dl dt embed fieldset figcaption figure footer for
                                    frame frameset h1 h2 h3 h4 h5 h6 head header hgroup hr html
@@ -618,7 +621,7 @@ namespace Carbonfrost.Commons.Html.Parser {
             int numSeen = 0;
             var iter = formattingElements.GetDescendingEnumerator();
             while (iter.MoveNext()) {
-                HtmlElement el =  iter.Current;
+                var el = iter.Current;
                 if (el == null) // marker
                     break;
 
@@ -634,7 +637,7 @@ namespace Carbonfrost.Commons.Html.Parser {
             formattingElements.AddFirst(in2);
         }
 
-        private bool IsSameFormattingElement(HtmlElement a, HtmlElement b) {
+        private bool IsSameFormattingElement(HtmlElement a, DomContainer b) {
             // same if: same namespace, tag, and attributes. Element.Equals only checks tag, might in future check children
 
             return a.NodeName.Equals(b.NodeName) &&
@@ -650,7 +653,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                 return;
             }
 
-            HtmlElement entry = formattingElements.Last.Value;
+            var entry = formattingElements.Last.Value;
             int pos = size - 1;
             bool skip = false;
             while (true) {
@@ -681,7 +684,10 @@ namespace Carbonfrost.Commons.Html.Parser {
                 skip = false; // can only skip increment from 4.
                 HtmlElement newEl = Insert(entry.NodeName); // todo: avoid fostering here?
                 // newEl.namespace(entry.namespace()); // todo: namespaces
-                newEl.Attributes.AddAll(entry.Attributes);
+
+                foreach (var attr in entry.Attributes) {
+                    newEl.Attributes.Add(attr.Clone());
+                }
 
                 // 10. replace entry with new entry
                 formattingElements.AddBefore(formattingElements.Find(entry), newEl);
@@ -697,17 +703,17 @@ namespace Carbonfrost.Commons.Html.Parser {
 
         public void ClearFormattingElementsToLastMarker() {
             while (!formattingElements.IsEmpty()) {
-                HtmlElement el = formattingElements.Last.Value;
+                var el = formattingElements.Last.Value;
                 formattingElements.RemoveLast();
                 if (el == null)
                     break;
             }
         }
 
-        public void RemoveFromActiveFormattingElements(HtmlElement el) {
+        public void RemoveFromActiveFormattingElements(DomContainer el) {
             var it = formattingElements.GetDescendingEnumerator();
             while (it.MoveNext()) {
-                HtmlElement next = it.Current;
+                var next = it.Current;
 
                 if (next == el) {
                     it.Remove();
@@ -716,14 +722,14 @@ namespace Carbonfrost.Commons.Html.Parser {
             }
         }
 
-        public bool IsInActiveFormattingElements(HtmlElement el) {
+        public bool IsInActiveFormattingElements(DomContainer el) {
             return IsElementInQueue(formattingElements, el);
         }
 
-        public HtmlElement GetActiveFormattingElement(string nodeName) {
+        public DomContainer GetActiveFormattingElement(string nodeName) {
             var it = formattingElements.GetDescendingEnumerator();
             while (it.MoveNext()) {
-                HtmlElement next = it.Current;
+                var next = it.Current;
 
                 if (next == null) // scope marker
                     break;
@@ -733,17 +739,17 @@ namespace Carbonfrost.Commons.Html.Parser {
             return null;
         }
 
-        public void ReplaceActiveFormattingElement(HtmlElement out2, HtmlElement in2) {
+        public void ReplaceActiveFormattingElement(DomContainer out2, HtmlElement in2) {
             ReplaceInQueue(formattingElements, out2, in2);
         }
 
         public void InsertMarkerToFormattingElements() {
-            formattingElements.AddLast(new LinkedListNode<HtmlElement>(null));
+            formattingElements.AddLast(new LinkedListNode<DomContainer>(null));
         }
 
-        public void InsertInFosterParent(HtmlNode input) {
-            HtmlElement fosterParent = null;
-            HtmlElement lastTable = GetFromStack("table");
+        public void InsertInFosterParent(DomNode input) {
+            DomContainer fosterParent = null;
+            var lastTable = GetFromStack("table");
             bool isLastTableParent = false;
 
             if (lastTable != null) {
@@ -766,7 +772,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                 lastTable.Before(input);
             }
             else
-                fosterParent.AppendChild(input);
+                fosterParent.Append(input);
         }
 
         public override string ToString() {

@@ -17,6 +17,7 @@
 //
 
 using System;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html.Parser {
 
@@ -60,21 +61,24 @@ namespace Carbonfrost.Commons.Html.Parser {
             return true;
         }
 
-        private void InsertNode(HtmlNode node) {
-            this.CurrentElement.AppendChild(node);
+        private void InsertNode(DomNode node) {
+            this.CurrentElement.Append(node);
         }
 
         HtmlElement Insert(Token.StartTag startTag) {
-            Tag tag = Tag.ValueOf(startTag.Name);
+            HtmlElementDefinition tag = TagLibrary.GetTag(startTag.Name);
 
             // TODO: wonder if for xml parsing, should treat all tags as unknown? because it's not html.
-            HtmlElement el = new HtmlElement(tag, baseUri, startTag.Attributes);
+            HtmlElement el = new HtmlElement(startTag.Name, baseUri, startTag.Attributes);
             InsertNode(el);
 
             if (startTag.IsSelfClosing) {
                 tokeniser.AcknowledgeSelfClosingFlag();
-                if (!this.TagLibrary.IsKnownTag(tag)) // unknown tag, remember this is self closing for output. see above.
-                    tag.selfClosing = true;
+                // TODO Change to schema is not ideal
+                if (!tag.IsReadOnly && tag.IsUnknownTag) { // unknown tag, remember this is self closing for output. see above.
+                    tag.IsSelfClosing = true;
+                    tag.IsEmpty = true;
+                }
 
             } else {
                 stack.AddLast(el);
@@ -84,36 +88,37 @@ namespace Carbonfrost.Commons.Html.Parser {
 
         void Insert(Token.Comment commentToken) {
             if (commentToken.IsBogus) {
-                HtmlProcessingInstruction comment = new HtmlProcessingInstruction(commentToken, baseUri);
+                var comment = HtmlProcessingInstruction.Create(commentToken, baseUri);
                 InsertNode(comment);
 
             } else {
-                HtmlComment comment = new HtmlComment(commentToken.Data, baseUri);
+                var comment = doc.CreateComment(commentToken.Data);
                 InsertNode(comment);
             }
         }
 
         void Insert(Token.Character characterToken) {
-            HtmlNode node = new HtmlText(characterToken.Data, baseUri);
+            var node = new HtmlText(characterToken.Data, baseUri);
             InsertNode(node);
         }
 
         void Insert(Token.Doctype d) {
-            HtmlDocumentType doctypeNode = new HtmlDocumentType(
+            var doctypeNode = doc.CreateDocumentType(
                 d.Name,
                 d.PublicIdentifier,
-                d.SystemIdentifier,
-                baseUri);
+                d.SystemIdentifier
+            );
+            doctypeNode.BaseUri = baseUri;
             InsertNode(doctypeNode);
         }
 
         private void PopStackToClose(Token.EndTag endTag) {
             String elName = endTag.Name;
-            HtmlElement firstFound = null;
+            DomContainer firstFound = null;
 
             var it = stack.GetDescendingEnumerator();
             while (it.MoveNext()) {
-                HtmlElement next = it.Current;
+                DomContainer next = it.Current;
                 if (next.NodeName.Equals(elName)) {
                     firstFound = next;
                     break;
@@ -124,7 +129,7 @@ namespace Carbonfrost.Commons.Html.Parser {
 
             it = stack.GetDescendingEnumerator();
             while (it.MoveNext()) {
-                HtmlElement next = it.Current;
+                DomContainer next = it.Current;
                 if (next == firstFound) {
                     it.Remove();
                     break;

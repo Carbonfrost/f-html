@@ -1,7 +1,5 @@
 //
-// - Token.Tag.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (http://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,8 +36,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-
 namespace Carbonfrost.Commons.Html.Parser {
 
     partial class Token {
@@ -47,7 +43,7 @@ namespace Carbonfrost.Commons.Html.Parser {
         internal abstract class Tag : Token {
 
             private string tagName;
-            private HtmlAttributeCollection attributes = new HtmlAttributeCollection(); // TODO: allow nodes to not have attributes
+            private readonly HtmlAttributeCollection _attributes = new HtmlAttributeCollection(); // TODO: allow nodes to not have attributes
             internal bool selfClosing = false;
 
             private string pendingAttributeName;
@@ -61,7 +57,7 @@ namespace Carbonfrost.Commons.Html.Parser {
 
             public HtmlAttributeCollection Attributes {
                 get {
-                    return attributes;
+                    return _attributes;
                 }
             }
 
@@ -79,7 +75,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                     if (pendingAttributeValue == null)
                         pendingAttributeValue = string.Empty;
 
-                    attributes[pendingAttributeName] = pendingAttributeValue;
+                    Attributes[pendingAttributeName] = pendingAttributeValue;
                 }
 
                 pendingAttributeName = null;

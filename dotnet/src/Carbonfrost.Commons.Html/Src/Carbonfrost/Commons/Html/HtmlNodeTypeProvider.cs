@@ -1,13 +1,11 @@
-//
-// - HtmlNodeType.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+﻿//
+// Copyright 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,26 +15,22 @@
 //
 
 using System;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html {
 
-    public enum HtmlNodeType {
+    class HtmlNodeTypeProvider : IDomNodeTypeProvider {
 
-        // W3C compliant values
+        public Type GetAttributeNodeType(string name) {
+            return typeof(HtmlAttribute);
+        }
 
-		Unspecified = 0,
-		Element = 1,
-		Attribute = 2,
-		Text = 3,
-		CDataSection = 4,
-		EntityReference = 5,
-		Entity = 6,
-		ProcessingInstruction = 7,
-		Comment = 8,
-		Document = 9,
-		DocumentType = 10,
-		DocumentFragment = 11,
-		Notation = 12,
+        public Type GetElementNodeType(string name) {
+            return typeof(HtmlElement);
+        }
 
-	}
+        public Type GetProcessingInstructionNodeType(string target) {
+            return typeof(HtmlProcessingInstruction);
+        }
+    }
 }

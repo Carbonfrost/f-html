@@ -1,13 +1,11 @@
 //
-// - HtmlText.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,95 +41,50 @@ using System;
 using System.Text;
 using System.Text.RegularExpressions;
 
-using Carbonfrost.Commons.Core;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html {
 
-    public class HtmlText : HtmlCharacterData {
+    public class HtmlText : DomText<HtmlText>, IHtmlNode {
 
-        // TODO Improve definition of behavior isData, etc.; remove redundancy
-
-        private bool isData;
-        private string text;
+        private readonly bool _isData;
 
         public bool IsBlank {
             get {
-                return StringUtil.IsBlank(this.RawText);
-            }
-        }
-
-        public string Text {
-            get {
-                return StringUtil.NormalizeWhitespace(RawText);
-            }
-            set {
-                this.text = value;
+                return StringUtil.IsBlank(Data);
             }
         }
 
         public bool IsData {
             get {
-                return isData;
+                return _isData;
             }
         }
 
-        public string RawText {
+        internal HtmlText() : this("", null) {}
+
+        internal HtmlText(string text, Uri baseUri, bool isData = false) {
+            Data = text;
+            _isData = isData;
+            BaseUri = baseUri;
+        }
+
+        public string InnerHtml {
             get {
-                return text;
+                return Data;
             }
             set {
-                this.text = value;
+                throw new NotImplementedException();
             }
         }
 
-        internal HtmlText(string text, Uri baseUri, bool isData = false)
-            : base(baseUri)
-        {
-            this.Text = text;
-            this.isData = isData;
-        }
-
-        public override string NodeName {
+        public string OuterHtml {
             get {
-                return NodeNames.Text;
-            }
-        }
-
-        public override HtmlNodeType NodeType {
-            get {
-                return HtmlNodeType.Text;
-            }
-        }
-
-        public override string TextContent {
-            get {
-                return this.RawText;
+                return Data;
             }
             set {
-                this.RawText = value;
+                throw new NotImplementedException();
             }
-        }
-
-        public HtmlText SplitText(int offset) {
-            if (offset < 0)
-                throw Failure.Negative("offset", offset);
-
-            if (offset >= this.Text.Length)
-                throw Failure.IndexOutOfRange("offset", offset);
-
-            string head = this.RawText.Substring(0, offset);
-            string tail = this.RawText.Substring(offset);
-            this.Text = head;
-
-            HtmlText tailNode = new HtmlText(tail, this.BaseUri);
-            if (Parent != null)
-                Parent.AddChildren(this.NodePosition + 1, tailNode);
-
-            return tailNode;
-        }
-
-        public override string ToString() {
-            return OuterHtml;
         }
 
         internal static string StripLeadingWhitespace(string text) {
@@ -140,20 +93,6 @@ namespace Carbonfrost.Commons.Html {
 
         internal static bool LastCharIsWhitespace(StringBuilder sb) {
             return sb.Length != 0 && sb[sb.Length - 1] == ' ';
-        }
-
-        public override TResult AcceptVisitor<TArgument, TResult>(HtmlNodeVisitor<TArgument, TResult> visitor, TArgument argument) {
-            if (visitor == null)
-                throw new ArgumentNullException("visitor");
-
-            return visitor.VisitText(this, argument);
-        }
-
-        public override void AcceptVisitor(HtmlNodeVisitor visitor) {
-            if (visitor == null)
-                throw new ArgumentNullException("visitor");
-
-            visitor.VisitText(this);
         }
     }
 

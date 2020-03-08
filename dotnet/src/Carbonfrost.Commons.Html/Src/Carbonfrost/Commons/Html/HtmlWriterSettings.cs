@@ -1,13 +1,11 @@
 //
-// - HtmlWriterSettings.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +14,6 @@
 // limitations under the License.
 //
 
-using System;
 using System.Text;
 using Carbonfrost.Commons.Core;
 
@@ -32,12 +29,6 @@ namespace Carbonfrost.Commons.Html {
         private Encoder _charsetEncoder = Encoding.UTF8.GetEncoder();
         private bool _prettyPrint = true;
         private int _indentAmount = 1;
-        private TagLibrary tagLibrary;
-
-        public TagLibrary TagLibrary {
-            get { return tagLibrary ?? TagLibrary.Html5; }
-            set { tagLibrary = value; }
-        }
 
         public bool PrettyPrint {
             get {

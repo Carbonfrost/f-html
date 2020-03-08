@@ -27,7 +27,7 @@ namespace Carbonfrost.Commons.Html {
             if (element == null)
                 return null;
 
-            return element.Attribute("class", className);
+            return (HtmlElement) element.Attribute("class", className);
         }
 
         public static HtmlElement ClassNames(this HtmlElement element, IEnumerable<string> classNames) {

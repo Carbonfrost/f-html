@@ -1,13 +1,11 @@
 //
-// - ParserAttributeTest.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,7 +36,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
 using System.Linq;
 using Carbonfrost.Commons.Html;
 using Carbonfrost.Commons.Spec;
@@ -52,7 +49,7 @@ namespace Carbonfrost.UnitTests.Html.Parser {
             // test for jsoup bug #66
             string h = "<a class=lp href=/lib/14160711/>link text</a>";
             HtmlDocument doc = HtmlDocument.Parse(h);
-            HtmlElement a = doc.Select("a").First();
+            var a = doc.Select("a").First();
             Assert.Equal("link text", a.InnerText);
             Assert.Equal("/lib/14160711/", a.Attribute("href"));
         }
@@ -63,8 +60,8 @@ namespace Carbonfrost.UnitTests.Html.Parser {
             HtmlDocument doc = HtmlDocument.Parse(html);
 
             // need a better way to verify these:
-            HtmlElement p = doc.Body.Child(0);
-            Assert.Equal("p", p.Tag.Name);
+            var p = doc.Body.Child(0);
+            Assert.Equal("p", p.NodeName);
             Assert.Equal("foo > bar", p.Attribute("class"));
         }
 
@@ -75,8 +72,11 @@ namespace Carbonfrost.UnitTests.Html.Parser {
             HtmlDocument doc = HtmlDocument.Parse(html);
             Assert.Equal("<p =a=\"\">One<a <p=\"\">Something</a></p>\n" +
                             "<a <p=\"\">Else</a>", doc.Body.InnerHtml);
+        }
 
-            doc = HtmlDocument.Parse("<p .....>");
+        [Fact]
+        public void parses_missing_attribute_value_from_symbol() {
+            var doc = HtmlDocument.Parse("<p .....>");
             Assert.Equal("<p .....=\"\"></p>", doc.Body.InnerHtml);
         }
 

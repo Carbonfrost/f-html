@@ -1,13 +1,11 @@
 //
-// - TreeBuilder.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,6 +37,7 @@
 // THE SOFTWARE.
 
 using System;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html.Parser {
 
@@ -47,30 +46,33 @@ namespace Carbonfrost.Commons.Html.Parser {
         protected CharacterReader reader;
         internal Tokeniser tokeniser;
         protected HtmlDocument doc; // current doc we are building into
-        protected DescendableLinkedList<HtmlElement> stack; // the stack of open elements
+        protected DescendableLinkedList<DomContainer> stack; // the stack of open elements
         protected Uri baseUri; // current base uri, for creating new elements
         protected Token currentToken; // currentToken is used only for error tracking.
         protected HtmlParseErrorCollection errors; // null when not tracking errors
 
-        public HtmlElement CurrentElement {
+        public DomContainer CurrentElement {
             get {
                 return stack.Last.Value;
             }
         }
 
-        public TagLibrary TagLibrary {
-            get { return TagLibrary.Html5; }
+        internal HtmlSchema TagLibrary {
+            get {
+                return HtmlSchema.Html5;
+            }
         }
 
         protected virtual void InitialiseParse(string input, Uri baseUri, HtmlParseErrorCollection errors) {
-            if (input == null)
-                throw new ArgumentNullException("input");
+            if (input == null) {
+                throw new ArgumentNullException(nameof(input));
+            }
 
             this.doc = new HtmlDocument(baseUri);
             this.reader = new CharacterReader(input);
             this.errors = errors;
             this.tokeniser = new Tokeniser(reader, errors);
-            this.stack = new DescendableLinkedList<HtmlElement>();
+            this.stack = new DescendableLinkedList<DomContainer>();
             this.baseUri = baseUri;
         }
 

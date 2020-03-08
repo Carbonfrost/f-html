@@ -52,11 +52,11 @@ namespace Carbonfrost.UnitTests.Html.Parser {
             string html = "<html><head><title>First!</title></head><body><p>First post! <img src=\"foo.png\" /></p></body></html>";
             HtmlDocument doc = HtmlDocument.Parse(html);
             // need a better way to verify these:
-            HtmlElement p = doc.Body.Child(0);
-            Assert.Equal("p", p.Tag.Name);
-            HtmlElement img = p.Child(0);
+            var p = doc.Body.Child(0);
+            Assert.Equal("p", p.NodeName);
+            var img = p.Child(0);
             Assert.Equal("foo.png", img.Attribute("src"));
-            Assert.Equal("img", img.Tag.Name);
+            Assert.Equal("img", img.NodeName);
         }
 
     }

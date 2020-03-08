@@ -67,7 +67,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                     }
 
                 } else if ((t.IsStartTag
-                            && StringUtil.Hash("caption col colgroup tbody td tfoot th thead tr").Contains(t.AsStartTag().Name) ||
+                            && StringSet.Create("caption col colgroup tbody td tfoot th thead tr").Contains(t.AsStartTag().Name) ||
                             t.IsEndTag && t.AsEndTag().Name.Equals("table"))
                           ) {
                     tb.Error(this);
@@ -75,7 +75,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                     if (processed)
                         return tb.Process(t);
 
-                } else if (t.IsEndTag && StringUtil.Hash("body col colgroup html tbody td tfoot th thead tr").Contains(t.AsEndTag().Name)) {
+                } else if (t.IsEndTag && StringSet.Create("body col colgroup html tbody td tfoot th thead tr").Contains(t.AsEndTag().Name)) {
                     tb.Error(this);
                     return false;
 

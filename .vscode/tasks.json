@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/dotnet/test/Carbonfrost.UnitTests.Core/Carbonfrost.UnitTests.Core.csproj",
+                "${workspaceFolder}/dotnet/test/Carbonfrost.UnitTests.Html/Carbonfrost.UnitTests.Html.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/dotnet/test/Carbonfrost.UnitTests.Core/Carbonfrost.UnitTests.Core.csproj",
+                "${workspaceFolder}/dotnet/test/Carbonfrost.UnitTests.Html/Carbonfrost.UnitTests.Html.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -32,7 +32,7 @@
             "args": [
                 "watch",
                 "run",
-                "${workspaceFolder}/dotnet/test/Carbonfrost.UnitTests.Core/Carbonfrost.UnitTests.Core.csproj",
+                "${workspaceFolder}/dotnet/test/Carbonfrost.UnitTests.Html/Carbonfrost.UnitTests.Html.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],

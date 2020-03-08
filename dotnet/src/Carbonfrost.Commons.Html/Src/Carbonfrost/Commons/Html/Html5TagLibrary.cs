@@ -1,13 +1,11 @@
 //
-// - Html5TagLibrary.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,48 +36,49 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.Collections.Generic;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html {
 
-    sealed class Html5TagLibrary : TagLibrary {
+    sealed class Html5TagLibrary {
 
-        public Html5TagLibrary() : base() {
-            var tags = this.Tags;
-
+        public static void CopyTo(DomElementDefinitionCollection tags) {
             foreach (string tagName in blockTags) {
-                Tag tag = new Tag(tagName);
+                HtmlElementDefinition tag = new HtmlElementDefinition(tagName);
                 tags.Add(tag);
             }
 
             foreach (string tagName in inlineTags) {
-                Tag tag = new Tag(tagName);
-                tag._isBlock = false;
-                tag._canContainBlock = false;
-                tag._formatAsBlock = false;
+                HtmlElementDefinition tag = new HtmlElementDefinition(tagName);
+                tag.IsBlock = false;
+                tag.CanContainBlock = false;
+                tag.FormatAsBlock = false;
                 tags.Add(tag);
             }
 
             // mods:
             foreach (string tagName in emptyTags) {
-                Tag tag = tags[tagName];
+                HtmlElementDefinition tag = (HtmlElementDefinition) tags[tagName];
 
-                tag._canContainBlock = false;
-                tag._canContainInline = false;
-                tag.empty = true;
+                tag.CanContainBlock = false;
+                tag.CanContainInline = false;
+
+                // can self close (<foo />). used for unknown tags that self close, without forcing them as empty.
+                tag.IsEmpty = true; // can hold nothing; e.g. img
+                tag.IsSelfClosing = true;
             }
 
             foreach (string tagName in formatAsInlineTags) {
-                Tag tag = tags[tagName];
+                HtmlElementDefinition tag = (HtmlElementDefinition) tags[tagName];
 
-                tag._formatAsBlock = false;
+                tag.FormatAsBlock = false;
             }
 
+            // for pre, textarea, script etc
             foreach (string tagName in preserveWhitespaceTags) {
-                Tag tag = tags[tagName];
+                HtmlElementDefinition tag = (HtmlElementDefinition) tags[tagName];
 
-                tag._preserveWhitespace = true;
+                tag.WhitespaceMode = DomWhitespaceMode.Preserve;
             }
 
         }
