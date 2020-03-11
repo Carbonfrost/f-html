@@ -30,7 +30,7 @@ CONFIGURATION?=Release
 NUGET_CONFIG_FILE?=./nuget.config
 
 ## Set up dotnet configuration for NuGet
-dotnet/configure: -check-env-NUGET_SOURCE_URL -check-env-NUGET_PASSWORD -check-env-NUGET_USER_NAME -check-env-NUGET_CONFIG_FILE
+dotnet/configure: -requirements-dotnet -check-env-NUGET_SOURCE_URL -check-env-NUGET_PASSWORD -check-env-NUGET_USER_NAME -check-env-NUGET_CONFIG_FILE
 	@ test -e $(NUGET_CONFIG_FILE) || echo "<configuration />" > $(NUGET_CONFIG_FILE)
 	@ nuget sources add -Name "Carbonfrost" \
 		-Source $(NUGET_SOURCE_URL) \
@@ -40,7 +40,7 @@ dotnet/configure: -check-env-NUGET_SOURCE_URL -check-env-NUGET_PASSWORD -check-e
 		-ConfigFile $(NUGET_CONFIG_FILE)
 
 ## Restore package dependencies
-dotnet/restore:
+dotnet/restore: -requirements-dotnet
 	@ dotnet restore ./dotnet
 
 ## Build the dotnet solution
@@ -59,21 +59,22 @@ dotnet/publish: dotnet/build -dotnet/publish
 dotnet/clean:
 	@ rm -rdf dotnet/{src,test}/*/{bin,obj}/*
 
--dotnet/build:
+-dotnet/build: -requirements-dotnet -check-env-CONFIGURATION
 	@ eval $(shell eng/build_env); \
 		dotnet build --configuration $(CONFIGURATION) --no-restore ./dotnet
 
--dotnet/pack:
+-dotnet/pack: -requirements-dotnet -check-env-CONFIGURATION
 	@ eval $(shell eng/build_env); \
 		dotnet pack --configuration $(CONFIGURATION) --no-build ./dotnet
 
--dotnet/publish:
+-dotnet/publish: -requirements-dotnet -check-env-CONFIGURATION
 	@ eval $(shell eng/build_env); \
 		dotnet publish --configuration $(CONFIGURATION) --no-build ./dotnet
 
 # Nuget CLI doesn't work with GitHub package registry for some reason, so we're using a curl directly
--dotnet/push:
+-dotnet/push: -requirements-dotnet -check-env-NUGET_PASSWORD -check-env-NUGET_USER_NAME -check-env-NUGET_UPLOAD_URL
 	@ for f in dotnet/src/*/bin/Release/*.nupkg; do \
 		curl -X PUT -u "$(NUGET_USER_NAME):$(NUGET_PASSWORD)" -F package=@$$f $(NUGET_UPLOAD_URL); \
 	done
 
+-requirements-dotnet: -check-command-dotnet

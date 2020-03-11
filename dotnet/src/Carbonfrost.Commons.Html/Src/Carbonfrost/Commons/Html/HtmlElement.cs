@@ -1,13 +1,11 @@
 //
-// - HtmlElement.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -40,18 +38,15 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 
-using Carbonfrost.Commons.Html.Query;
+using Carbonfrost.Commons.Web.Dom;
 using HtmlParser = Carbonfrost.Commons.Html.Parser.Parser;
 
 namespace Carbonfrost.Commons.Html {
 
-    public partial class HtmlElement : HtmlNode {
-
-        private Tag _tag;
+    public partial class HtmlElement : DomElement<HtmlElement>, IHtmlNode {
 
         public bool IsBlock {
             get {
@@ -65,25 +60,47 @@ namespace Carbonfrost.Commons.Html {
             }
         }
 
-        public new HtmlElement Parent {
+        internal HtmlElementDefinition Tag {
             get {
-                return (HtmlElement) base.Parent;
+                return ElementDefinition;
             }
         }
 
-        public Tag Tag {
-            get { return _tag; }
+        public new HtmlElementDefinition ElementDefinition {
+            get {
+                return (HtmlElementDefinition) base.ElementDefinition;
+            }
+        }
+
+        protected override DomElementDefinition DomElementDefinition {
+            get {
+                return this.FindSchema().GetTag(Name);
+            }
+        }
+
+        public virtual string OuterHtml {
+            get {
+                StringBuilder accum = new StringBuilder();
+                var v = new OuterHtmlNodeVisitor(accum);
+                v.Visit(this);
+
+                return accum.ToString().Trim();
+            }
+            set {
+                throw new NotImplementedException();
+            }
         }
 
         public bool HasText {
             get {
-                foreach (HtmlNode child in ChildNodes) {
-                    if (child.NodeType == HtmlNodeType.Text) {
+                foreach (var child in ChildNodes) {
+                    if (child.NodeType == DomNodeType.Text) {
                         HtmlText textNode = (HtmlText) child;
-                        if (!textNode.IsBlank)
+                        if (!textNode.IsBlank) {
                             return true;
+                        }
 
-                    } else if (child.NodeType == HtmlNodeType.Element) {
+                    } else if (child.NodeType == DomNodeType.Element) {
                         HtmlElement el = (HtmlElement) child;
                         if (el.HasText)
                             return true;
@@ -93,58 +110,25 @@ namespace Carbonfrost.Commons.Html {
             }
         }
 
-        public HtmlElement NextElementSibling {
-            get {
-                if (Parent == null)
-                    return null;
-
-                IList<HtmlElement> siblings = Parent.Children;
-                int? index = IndexInList(this, siblings);
-                if (!index.HasValue) {
-                    HtmlWarning.ExpectedChildInParentCollection();
-                    return null;
-                }
-
-                if (siblings.Count > index + 1)
-                    return siblings[index.Value + 1];
-                else
-                    return null;
-            }
-        }
-
-        public HtmlElement PreviousElementSibling {
-            get {
-                if (Parent == null)
-                    return null;
-
-                IList<HtmlElement> siblings = Parent.Children;
-                int? index = IndexInList(this, siblings);
-                if (!index.HasValue) {
-                    HtmlWarning.ExpectedChildInParentCollection();
-                    return null;
-                }
-
-                if (index > 0)
-                    return siblings[index.Value - 1];
-                else
-                    return null;
-            }
-        }
-
         internal bool PreserveWhitespace {
             get {
-                return this.Tag.PreserveWhitespace
-                    || Parent != null
-                    && Parent.PreserveWhitespace;
+                if (Tag.PreserveWhitespace) {
+                    return true;
+                }
+                if (Parent is HtmlElement he) {
+                    return he.PreserveWhitespace;
+                }
+                return false;
             }
         }
 
-        public override string InnerHtml {
+        public string InnerHtml {
             get {
                 StringBuilder accum = new StringBuilder();
-                OuterHtmlNodeVisitor v = new OuterHtmlNodeVisitor(accum);
-                foreach (HtmlNode node in ChildNodes)
+                var v = new OuterHtmlNodeVisitor(accum);
+                foreach (var node in ChildNodes) {
                     v.Visit(node);
+                }
 
                 return accum.ToString().Trim();
             }
@@ -161,92 +145,39 @@ namespace Carbonfrost.Commons.Html {
             set {
                 Empty();
                 HtmlText textNode = new HtmlText(value, this.BaseUri);
-                AppendChild(textNode);
+                Append(textNode);
             }
         }
 
-        public ReadOnlyCollection<HtmlElement> SiblingElements {
-            get {
-                if (this.Parent == null)
-                    return Empty<HtmlElement>.ReadOnly;
+        internal HtmlElement(string tagName, Uri baseUri, IEnumerable<HtmlAttribute> attributes) : base(tagName) {
+            if (attributes != null) {
+                Attributes.AddMany(attributes);
+            }
+            BaseUri = baseUri;
+        }
 
-                return new ReadOnlyCollection<HtmlElement>(
-                    Parent.Children.Except(this).ToArray());
+        internal HtmlElement(string tagName, Uri baseUri) :
+            this(tagName, baseUri, null) {
+        }
+
+        internal HtmlElement(string tagName) :
+            this(tagName, null, null) {
+        }
+
+        internal void RemoveChild(DomNode outNode) {
+            System.Diagnostics.Debug.Assert(outNode.ParentElement == this);
+            if (outNode.ParentElement == this) {
+                outNode.RemoveSelf();
             }
         }
 
-        public string Id {
-            get {
-                string id = this.Attribute("id");
-                return id == null ? string.Empty : id;
-            }
-            set {
-                this.Attribute("id", value);
-            }
-        }
-
-        internal HtmlElement(Tag tag, Uri baseUri, HtmlAttributeCollection attributes) : base(baseUri, attributes) {
-            if (tag == null)
-                throw new ArgumentNullException("tag");
-            this._tag = tag;
-        }
-
-        internal HtmlElement(Tag tag, Uri baseUri) :
-            this(tag, baseUri, new HtmlAttributeCollection()) {
-        }
-
-        public override string NodeName {
-            get {
-                return Tag.Name;
-            }
-        }
-
-        public override HtmlNodeType NodeType {
-            get {
-                return HtmlNodeType.Element;
-            }
-        }
-
-        // TODO These should be "live" collections
-
-        public ReadOnlyCollection<HtmlElement> Parents {
-            get {
-                return new ReadOnlyCollection<HtmlElement>(ParentsIterator().ToArray());
-            }
-        }
-
-        public ReadOnlyCollection<HtmlElement> Children {
-            get {
-                return new ReadOnlyCollection<HtmlElement>(ChildNodes.Where(t => t.NodeType == HtmlNodeType.Element).Cast<HtmlElement>().ToArray());
-            }
-        }
-
-        public HtmlElement Child(int index) {
-            return Children[index];
-        }
-
-        public HtmlElementQuery Select(string cssQuery) {
-            return new CssSelector(cssQuery, this).Select();
-        }
-
-        public HtmlElement AppendText(string text) {
-            HtmlText node = new HtmlText(text, BaseUri, false);
-            AppendChild(node);
-            return this;
-        }
-
-        public HtmlElement PrependText(string text) {
-            HtmlText node = new HtmlText(text, BaseUri, false);
-            PrependChild(node);
-            return this;
-        }
-
+        // TODO Requires f-web-dom upgrade to include DomReader/HtmlReader
         public HtmlElement Append(string html) {
             if (html == null)
                 throw new ArgumentNullException("html");
 
-            IList<HtmlNode> nodes = HtmlParser.ParseFragment(html, this, BaseUri);
-            AddChildren(nodes.ToArray());
+            IList<DomNode> nodes = HtmlParser.ParseFragment(html, this, BaseUri);
+            Append(nodes.ToArray());
             return this;
         }
 
@@ -254,113 +185,13 @@ namespace Carbonfrost.Commons.Html {
             if (html == null)
                 throw new ArgumentNullException("html");
 
-            IList<HtmlNode> nodes = HtmlParser.ParseFragment(html, this, this.BaseUri);
-            AddChildren(0, nodes.ToArray());
+            var nodes = HtmlParser.ParseFragment(html, this, this.BaseUri);
+            Prepend(nodes.ToArray());
             return this;
         }
 
-        public new HtmlElement Before(string html) {
-            return (HtmlElement) base.Before(html);
-        }
-
-        public new HtmlElement Before(HtmlNode node) {
-            return (HtmlElement) base.Before(node);
-        }
-
-        public new HtmlElement After(string html) {
-            return (HtmlElement) base.After(html);
-        }
-
-        public new HtmlElement After(HtmlNode node) {
-            return (HtmlElement) base.After(node);
-        }
-
-        public new HtmlElement Wrap(string html) {
-            return (HtmlElement) base.Wrap(html);
-        }
-
-        public HtmlElement FirstElementSibling {
-            get {
-                // TODO: should firstSibling() exclude this?
-                return Parent.Children.FirstOrDefault();
-            }
-        }
-
-        public int Position {
-            get {
-                if (Parent == null)
-                    return 0;
-
-                return IndexInList(this, Parent.Children).Value;
-            }
-        }
-
-        public HtmlElement LastElementSibling {
-            get {
-                return Parent.Children.LastOrDefault();
-            }
-        }
-
-        private static int? IndexInList<E>(HtmlElement search, IList<E> elements)
-            where E : HtmlElement {
-            if (search == null)
-                throw new ArgumentNullException("search");
-            if (elements == null)
-                throw new ArgumentNullException("elements");
-
-            for (int i = 0; i < elements.Count; i++) {
-                E element = elements[i];
-                if (element.Equals(search))
-                    return i;
-            }
-            return null;
-        }
-
-        public override string ToString() {
-            return OuterHtml;
-        }
-
-        public override bool Equals(Object obj) {
-            return this == obj;
-        }
-
-        public override int GetHashCode() {
-            // TODO: fixup, not very useful
-            int result = base.GetHashCode();
-            result = 31 * result + (Tag != null ? Tag.GetHashCode() : 0);
-            return result;
-        }
-
         public new HtmlElement Clone() {
-            HtmlElement clone = (HtmlElement) this.MemberwiseClone();
-            return clone;
-        }
-
-        public override TResult AcceptVisitor<TArgument, TResult>(HtmlNodeVisitor<TArgument, TResult> visitor, TArgument argument) {
-            if (visitor == null)
-                throw new ArgumentNullException("visitor");
-
-            return visitor.VisitElement(this, argument);
-        }
-
-        public override void AcceptVisitor(HtmlNodeVisitor visitor) {
-            if (visitor == null)
-                throw new ArgumentNullException("visitor");
-
-            visitor.VisitElement(this);
-        }
-
-        private Tag GetTag(string tag) {
-            return Tag.ValueOf(tag);
-        }
-
-        private IEnumerable<HtmlElement> ParentsIterator() {
-            HtmlElement parent = this.Parent;
-            while (parent != null && !parent.Tag.Name.Equals(NodeNames.Document) && !parent.Tag.Name.Equals(NodeNames.DocumentFragment)) {
-                yield return parent;
-                parent = parent.Parent;
-            }
+            return (HtmlElement) base.Clone();
         }
     }
-
 }

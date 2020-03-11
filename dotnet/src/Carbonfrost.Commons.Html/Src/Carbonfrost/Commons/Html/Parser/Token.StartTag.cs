@@ -1,13 +1,11 @@
 //
-// - Token.StartTag.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,8 +36,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-
 namespace Carbonfrost.Commons.Html.Parser {
 
     partial class Token {
@@ -55,13 +51,8 @@ namespace Carbonfrost.Commons.Html.Parser {
             public StartTag() {}
 
             public StartTag(string name) {
-                this.Name = name;
+                Name = name;
             }
-
-            public override string ToString() {
-                return string.Concat("<", Name, " ", Attributes.ToString(), ">");
-            }
-
         }
 
     }

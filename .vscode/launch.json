@@ -8,11 +8,14 @@
             "name": ".NET Core Launch (console)",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
+            "preLaunchTask": "publish",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/dotnet/test/Carbonfrost.UnitTests.Core/bin/Debug/netcoreapp3.0/Carbonfrost.UnitTests.Core.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/dotnet/test/Carbonfrost.UnitTests.Core",
+            "program": "fspec",
+            "args": [
+              "-i", "dotnet/test/Carbonfrost.UnitTests.Html/Content",
+              "dotnet/test/Carbonfrost.UnitTests.Html/bin/Debug/netcoreapp3.0/publish/Carbonfrost.UnitTests.Html.dll"
+            ],
+            "cwd": "${workspaceFolder}",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false

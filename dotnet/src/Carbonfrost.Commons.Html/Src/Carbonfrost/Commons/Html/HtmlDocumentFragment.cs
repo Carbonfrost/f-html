@@ -1,13 +1,11 @@
 //
-// - HtmlDocumentFragment.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,31 +15,42 @@
 //
 
 using System;
+using System.Linq;
+using System.Text;
+using Carbonfrost.Commons.Web.Dom;
 using HtmlParser = Carbonfrost.Commons.Html.Parser.Parser;
 
 namespace Carbonfrost.Commons.Html {
 
-    public class HtmlDocumentFragment : HtmlElement {
+    public class HtmlDocumentFragment : DomDocumentFragment, IHtmlNode {
 
-        public HtmlDocumentFragment(Uri baseUri)
-            : base(Tag.ValueOf(NodeNames.Document), baseUri) {
-        }
-
-        public override string NodeName {
+        public string OuterHtml {
             get {
-                return NodeNames.DocumentFragment;
+                return InnerHtml;
+            }
+            set {
+                InnerHtml = value;
             }
         }
 
-        public override string OuterHtml {
+        public string InnerHtml {
             get {
-                return this.InnerHtml; // no outer wrapper tag
+                StringBuilder accum = new StringBuilder();
+                var v = new OuterHtmlNodeVisitor(accum);
+                foreach (var child in ChildNodes) {
+                    v.Visit(child);
+                }
+
+                return accum.ToString().Trim();
+            }
+            set {
+                throw new NotImplementedException();
             }
         }
 
-        public override HtmlNodeType NodeType {
+        public override DomNodeType NodeType {
             get {
-                return HtmlNodeType.DocumentFragment;
+                return DomNodeType.DocumentFragment;
             }
         }
 
@@ -51,23 +60,13 @@ namespace Carbonfrost.Commons.Html {
                                                  HtmlElement context,
                                                  Uri baseUri) {
 
-            HtmlDocumentFragment result = new HtmlDocumentFragment(baseUri);
-            result.AddChildren(HtmlParser.ParseFragment(html, context, baseUri));
+            HtmlDocumentFragment result = new HtmlDocumentFragment {
+                BaseUri = baseUri,
+            };
+            result.Append(
+                HtmlParser.ParseFragment(html, context, baseUri).ToList()
+            );
             return result;
-        }
-
-        public override TResult AcceptVisitor<TArgument, TResult>(HtmlNodeVisitor<TArgument, TResult> visitor, TArgument argument) {
-            if (visitor == null)
-                throw new ArgumentNullException("visitor");
-
-            return visitor.VisitDocumentFragment(this, argument);
-        }
-
-        public override void AcceptVisitor(HtmlNodeVisitor visitor) {
-            if (visitor == null)
-                throw new ArgumentNullException("visitor");
-
-            visitor.VisitDocumentFragment(this);
         }
     }
 }

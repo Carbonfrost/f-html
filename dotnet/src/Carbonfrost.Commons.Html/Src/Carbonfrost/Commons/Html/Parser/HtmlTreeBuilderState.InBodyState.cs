@@ -39,7 +39,9 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html.Parser {
 
@@ -101,6 +103,8 @@ namespace Carbonfrost.Commons.Html.Parser {
                 return true;
             }
 
+            static readonly StringSet HeadingTags = StringSet.Create("h1 h2 h3 h4 h5 h6");
+
             private bool? HandleEndTag(Token t, HtmlTreeBuilder tb) {
                 Token.EndTag endTag = t.AsEndTag();
                 string name = endTag.Name;
@@ -120,10 +124,9 @@ namespace Carbonfrost.Commons.Html.Parser {
                     if (notIgnored)
                         return tb.Process(endTag);
 
-                } else if (StringUtil.In(name,
-                                         "address", "article", "aside", "blockquote", "button", "center", "details", "dir", "div",
-                                         "dl", "fieldset", "figcaption", "figure", "footer", "header", "hgroup", "listing", "menu",
-                                         "nav", "ol", "pre", "section", "summary", "ul")) {
+                } else if (StringSet.Create(@"address article aside blockquote button center details dir div
+                                dl fieldset figcaption figure footer header hgroup listing menu
+                                nav ol pre section summary ul").Contains(name)) {
                     // TODO: refactor these lookups
                     if (!tb.InScope(name)) {
                         // nothing to close
@@ -186,8 +189,8 @@ namespace Carbonfrost.Commons.Html.Parser {
                         tb.PopStackToClose(name);
                     }
 
-                } else if (StringUtil.In(name, "h1", "h2", "h3", "h4", "h5", "h6")) {
-                    if (!tb.InScope(new string[]{"h1", "h2", "h3", "h4", "h5", "h6"})) {
+                } else if (HeadingTags.Contains(name)) {
+                    if (!tb.InScope(HeadingTags)) {
                         tb.Error(this);
                         return false;
 
@@ -195,20 +198,19 @@ namespace Carbonfrost.Commons.Html.Parser {
                         tb.GenerateImpliedEndTags(name);
                         if (!tb.CurrentElement.NodeName.Equals(name))
                             tb.Error(this);
-                        tb.PopStackToClose("h1", "h2", "h3", "h4", "h5", "h6");
+                        tb.PopStackToClose(HeadingTags);
                     }
 
                 } else if (name.Equals("sarcasm")) {
                     // *sigh*
                     return AnyOtherEndTag(t, tb);
 
-                } else if (StringUtil.In(name,
-                                         "a", "b", "big", "code", "em", "font", "i", "nobr", "s", "small", "strike", "strong", "tt", "u")) {
+                } else if (StringSet.Create("a b big code em font i nobr s small strike strong tt u").Contains(name)) {
 
                     // Adoption Agency Algorithm.
                 OUTER:
                     for (int i = 0; i < 8; i++) {
-                        HtmlElement formatEl = tb.GetActiveFormattingElement(name);
+                        var formatEl = tb.GetActiveFormattingElement(name);
                         if (formatEl == null)
                             return AnyOtherEndTag(t, tb);
 
@@ -224,13 +226,13 @@ namespace Carbonfrost.Commons.Html.Parser {
                         } else if (tb.CurrentElement != formatEl)
                             tb.Error(this);
 
-                        HtmlElement furthestBlock = null;
-                        HtmlElement commonAncestor = null;
+                        DomContainer furthestBlock = null;
+                        DomContainer commonAncestor = null;
                         bool seenFormattingElement = false;
-                        DescendableLinkedList<HtmlElement> stack = tb.Stack;
+                        DescendableLinkedList<DomContainer> stack = tb.Stack;
 
                         for (int si = 0; si < stack.Count; si++) {
-                            HtmlElement el = stack.ElementAt(si);
+                            DomContainer el = stack.ElementAt(si);
                             if (el == formatEl) {
                                 commonAncestor = stack.ElementAt(si - 1);
                                 seenFormattingElement = true;
@@ -249,8 +251,8 @@ namespace Carbonfrost.Commons.Html.Parser {
 
                         // TODO: Let a bookmark note the position of the formatting element in the list of active formatting elements relative to the elements on either side of it in the list.
                         // does that mean: int pos of format el in list?
-                        HtmlElement node = furthestBlock;
-                        HtmlElement lastNode = furthestBlock;
+                        DomContainer node = furthestBlock;
+                        DomContainer lastNode = furthestBlock;
 
                     INNER:
                         for (int j = 0; j < 3; j++) {
@@ -264,7 +266,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                             } else if (node == formatEl)
                                 goto breakINNER;
 
-                            HtmlElement replacement = new HtmlElement(Tag.ValueOf(node.NodeName), tb.BaseUri);
+                            HtmlElement replacement = new HtmlElement(node.NodeName, tb.BaseUri);
                             tb.ReplaceActiveFormattingElement(node, replacement);
                             tb.ReplaceOnStack(node, replacement);
                             node = replacement;
@@ -275,7 +277,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                             }
                             if (lastNode.Parent != null)
                                 lastNode.Remove();
-                            node.AppendChild(lastNode);
+                            node.Append(lastNode);
 
                             lastNode = node;
                         }
@@ -289,16 +291,16 @@ namespace Carbonfrost.Commons.Html.Parser {
                         } else {
                             if (lastNode.Parent != null)
                                 lastNode.Remove();
-                            commonAncestor.AppendChild(lastNode);
+                            commonAncestor.Append(lastNode);
                         }
 
-                        HtmlElement adopter = new HtmlElement(Tag.ValueOf(name), tb.BaseUri);
-                        HtmlNode[] childNodes = furthestBlock.ChildNodes.ToArray();
-                        foreach (HtmlNode childNode in childNodes) {
-                            adopter.AppendChild(childNode); // append will reparent. thus the clone to avvoid concurrent mod.
+                        HtmlElement adopter = new HtmlElement(name, tb.BaseUri);
+                        var childNodes = furthestBlock.ChildNodes.ToArray();
+                        foreach (var childNode in childNodes) {
+                            adopter.Append(childNode); // append will reparent. thus the clone to avvoid concurrent mod.
                         }
 
-                        furthestBlock.AppendChild(adopter);
+                        furthestBlock.Append(adopter);
                         tb.RemoveFromActiveFormattingElements(formatEl);
                         // TODO: insert the new element into the list of active formatting elements at the position of the aforementioned bookmark.
                         tb.RemoveFromStack(formatEl);
@@ -339,25 +341,25 @@ namespace Carbonfrost.Commons.Html.Parser {
                 if (name.Equals("html")) {
                     tb.Error(this);
                     // merge attributes onto real html
-                    HtmlElement html = tb.Stack.First();
+                    var html = tb.Stack.First();
                     foreach (HtmlAttribute attribute in startTag.Attributes) {
                         if (!html.HasAttribute(attribute.Name))
                             html.Attributes.Add(attribute);
                     }
 
-                } else if (StringUtil.In(name, "base", "basefont", "bgsound", "command", "link", "meta", "noframes", "script", "style", "title")) {
+                } else if (StringSet.Create("base basefont bgsound command link meta noframes script style title").Contains(name)) {
                     return tb.Process(t, InHead);
 
                 } else if (name.Equals("body")) {
                     tb.Error(this);
-                    DescendableLinkedList<HtmlElement> stack = tb.Stack;
+                    DescendableLinkedList<DomContainer> stack = tb.Stack;
                     if (stack.Count == 1 || (stack.Count > 2 && !stack.ElementAt(1).NodeName.Equals("body"))) {
                         // only in fragment case
                         return false; // ignore
 
                     } else {
                         tb.FramesetOK = false;
-                        HtmlElement body = stack.First();
+                        var body = stack.First();
                         foreach (HtmlAttribute attribute in startTag.Attributes) {
                             if (!body.HasAttribute(attribute.Name))
                                 body.Attributes.Add(attribute);
@@ -366,7 +368,7 @@ namespace Carbonfrost.Commons.Html.Parser {
 
                 } else if (name.Equals("frameset")) {
                     tb.Error(this);
-                    DescendableLinkedList<HtmlElement> stack = tb.Stack;
+                    DescendableLinkedList<DomContainer> stack = tb.Stack;
                     if (stack.Count == 1 || (stack.Count > 2 && !stack.ElementAt(1).NodeName.Equals("body"))) {
                         // only in fragment case
                         return false; // ignore
@@ -375,7 +377,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                         return false; // ignore frameset
 
                     } else {
-                        HtmlElement second = stack.ElementAt(1);
+                        var second = stack.ElementAt(1);
                         if (second.Parent != null)
                             second.Remove();
 
@@ -387,7 +389,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                         tb.Transition(InFrameset);
                     }
 
-                } else if (StringUtil.Hash(
+                } else if (StringSet.Create(
                     @"address article aside blockquote center details dir div dl
                                            fieldset figcaption figure footer header hgroup menu nav ol
                                            p section summary ul").Contains(name)) {
@@ -396,12 +398,12 @@ namespace Carbonfrost.Commons.Html.Parser {
                     }
                     tb.Insert(startTag);
 
-                } else if (StringUtil.Hash("h1 h2 h3 h4 h5 h6").Contains(name)) {
+                } else if (HeadingTags.Contains(name)) {
                     if (tb.InButtonScope("p")) {
                         tb.Process(new Token.EndTag("p"));
                     }
 
-                    if (StringUtil.Hash("h1 h2 h3 h4 h5 h6").Contains(tb.CurrentElement.NodeName)) {
+                    if (HeadingTags.Contains(tb.CurrentElement.NodeName)) {
                         tb.Error(this);
                         tb.Pop();
                     }
@@ -431,9 +433,9 @@ namespace Carbonfrost.Commons.Html.Parser {
                 } else if (name.Equals("li")) {
                     tb.FramesetOK = false;
 
-                    DescendableLinkedList<HtmlElement> stack = tb.Stack;
+                    DescendableLinkedList<DomContainer> stack = tb.Stack;
                     for (int i = stack.Count - 1; i > 0; i--) {
-                        HtmlElement el = stack.ElementAt(i); // TODO Performance of this?
+                        var el = stack.ElementAt(i); // TODO Performance of this?
                         if (el.NodeName.Equals("li")) {
                             tb.Process(new Token.EndTag("li"));
                             break;
@@ -449,9 +451,9 @@ namespace Carbonfrost.Commons.Html.Parser {
 
                 } else if (StringUtil.In(name, "dd", "dt")) {
                     tb.FramesetOK = false;
-                    DescendableLinkedList<HtmlElement> stack = tb.Stack;
+                    DescendableLinkedList<DomContainer> stack = tb.Stack;
                     for (int i = stack.Count - 1; i > 0; i--) {
-                        HtmlElement el = stack.ElementAt(i);
+                        var el = stack.ElementAt(i);
                         if (StringUtil.In(el.NodeName, "dd", "dt")) {
                             tb.Process(new Token.EndTag(el.NodeName));
                             break;
@@ -490,7 +492,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                         tb.Process(new Token.EndTag("a"));
 
                         // still on stack?
-                        HtmlElement remainingA = tb.GetFromStack("a");
+                        var remainingA = tb.GetFromStack("a");
                         if (remainingA != null) {
                             tb.RemoveFromActiveFormattingElements(remainingA);
                             tb.RemoveFromStack(remainingA);
@@ -500,8 +502,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                     HtmlElement a = tb.Insert(startTag);
                     tb.PushActiveFormattingElements(a);
 
-                } else if (StringUtil.In(name,
-                                         "b", "big", "code", "em", "font", "i", "s", "small", "strike", "strong", "tt", "u")) {
+                } else if (StringSet.Create("b big code em font i s small strike strong tt u").Contains(name)) {
                     tb.ReconstructFormattingElements();
                     HtmlElement el = tb.Insert(startTag);
                     tb.PushActiveFormattingElements(el);
@@ -530,7 +531,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                     tb.FramesetOK = false;
                     tb.Transition(InTable);
 
-                } else if (StringUtil.In(name, "area", "br", "embed", "img", "keygen", "wbr")) {
+                } else if (StringSet.Create("area br embed img keygen wbr").Contains(name)) {
                     tb.ReconstructFormattingElements();
                     tb.InsertEmpty(startTag);
                     tb.FramesetOK = false;
@@ -661,7 +662,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                     tb.Insert(startTag);
                     tb.tokeniser.AcknowledgeSelfClosingFlag();
 
-                } else if (StringUtil.Hash("caption col colgroup frame head tbody td tfoot th thead tr").Contains(name)) {
+                } else if (StringSet.Create("caption col colgroup frame head tbody td tfoot th thead tr").Contains(name)) {
                     tb.Error(this);
                     return false;
                 } else {
@@ -674,11 +675,11 @@ namespace Carbonfrost.Commons.Html.Parser {
 
             bool AnyOtherEndTag(Token t, HtmlTreeBuilder tb) {
                 string name = t.AsEndTag().Name;
-                DescendableLinkedList<HtmlElement> stack = tb.Stack;
+                DescendableLinkedList<DomContainer> stack = tb.Stack;
                 var it = stack.GetDescendingEnumerator();
 
                 while (it.MoveNext()) {
-                    HtmlElement node = it.Current;
+                    var node = it.Current;
                     if (node.NodeName.Equals(name)) {
                         tb.GenerateImpliedEndTags(name);
                         if (!name.Equals(tb.CurrentElement.NodeName))

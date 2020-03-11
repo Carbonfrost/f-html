@@ -47,12 +47,12 @@ namespace Carbonfrost.Commons.Html.Parser {
         class InSelectInTableState : HtmlTreeBuilderState {
 
             public override bool Process(Token t, HtmlTreeBuilder tb) {
-                if (t.IsStartTag && StringUtil.Hash("caption table tbody tfoot thead tr td th").Contains(t.AsStartTag().Name)) {
+                if (t.IsStartTag && StringSet.Create("caption table tbody tfoot thead tr td th").Contains(t.AsStartTag().Name)) {
                     tb.Error(this);
                     tb.Process(new Token.EndTag("select"));
                     return tb.Process(t);
 
-                } else if (t.IsEndTag && StringUtil.Hash("caption table tbody tfoot thead tr td th").Contains(t.AsEndTag().Name)) {
+                } else if (t.IsEndTag && StringSet.Create("caption table tbody tfoot thead tr td th").Contains(t.AsEndTag().Name)) {
                     tb.Error(this);
                     if (tb.InTableScope(t.AsEndTag().Name)) {
                         tb.Process(new Token.EndTag("select"));

@@ -1,13 +1,11 @@
 //
-// - StringUtil.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,21 +36,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace Carbonfrost.Commons.Html {
 
     static class StringUtil {
-
-        static readonly Dictionary<string, HashSet<string>> hashes = new Dictionary<string, HashSet<string>>();
-
-        [Obsolete]
-        public static bool In(this string name, params string[] items) {
-            return items.Contains(name);
-        }
 
         public static bool In(this string name, string item0, string item1) {
             return name == item0 || name == item1;
@@ -88,7 +76,7 @@ namespace Carbonfrost.Commons.Html {
         }
 
         internal static void AppendNormalisedText(StringBuilder accum, HtmlText textNode, bool preserveWhitespace) {
-            string text = textNode.RawText;
+            string text = textNode.Data;
 
             if (!preserveWhitespace) {
                 text = StringUtil.NormalizeWhitespace(text);
@@ -100,7 +88,7 @@ namespace Carbonfrost.Commons.Html {
         }
 
         internal static void AppendWhitespaceIfBr(HtmlElement element, StringBuilder accum) {
-            if (element.Tag.Name == "br" && !HtmlText.LastCharIsWhitespace(accum))
+            if (element.NodeName == "br" && !HtmlText.LastCharIsWhitespace(accum))
                 accum.Append(" ");
         }
 
@@ -134,34 +122,6 @@ namespace Carbonfrost.Commons.Html {
             }
 
             return modified ? sb.ToString() : text;
-        }
-
-        public static string GetOwnText(HtmlElement element) {
-            StringBuilder accum = new StringBuilder();
-
-            foreach (HtmlNode child in element.ChildNodes) {
-                if (child.NodeType == HtmlNodeType.Text) {
-                    HtmlText textNode = (HtmlText) child;
-                    StringUtil.AppendNormalisedText(accum, textNode, element.PreserveWhitespace);
-
-                } else if (child.NodeType == HtmlNodeType.Element) {
-                    HtmlElement e = (HtmlElement) child;
-                    StringUtil.AppendWhitespaceIfBr(e, accum);
-                }
-            }
-
-            return accum.ToString().Trim();
-        }
-
-        // As long as clients use interned strings for the argument, dictionary lookup should be very fast
-        // Like qw// (or %w in Ruby) then making a set
-        public static ISet<string> Hash(string text) {
-            // TODO This set result should actually be read-only
-            return StringUtil.hashes.GetValueOrCache(text, _ => new HashSet<string>(SplitHashText(text)));
-        }
-
-        static IEnumerable<string> SplitHashText(string text) {
-            return text.Split(new char[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
         }
     }
 }

@@ -57,13 +57,15 @@ namespace Carbonfrost.Commons.Html.Parser {
                     // TODO: parse error check on expected doctypes
                     // TODO: quirk state check on doctype ids
                     Token.Doctype d = t.AsDoctype();
-                    HtmlDocumentType doctype = tb.Document.CreateDocumentType(
+
+                    var doctype = tb.Document.CreateDocumentType(
                         d.Name,
                         d.PublicIdentifier,
-                        d.SystemIdentifier,
-                        tb.BaseUri);
+                        d.SystemIdentifier
+                    );
+                    doctype.BaseUri = tb.BaseUri;
 
-                    tb.Document.AppendChild(doctype);
+                    tb.Document.Append(doctype);
                     if (d.ForceQuirks)
                         tb.Document.QuirksMode = QuirksMode.Quirks;
 

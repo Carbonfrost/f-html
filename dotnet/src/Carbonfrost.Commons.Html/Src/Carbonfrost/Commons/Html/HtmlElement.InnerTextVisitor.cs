@@ -1,13 +1,11 @@
 //
-// - HtmlElement.InnerTextVisitor.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +14,8 @@
 // limitations under the License.
 //
 
-using System;
-using System.Collections;
 using System.Text;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html {
 
@@ -26,31 +23,39 @@ namespace Carbonfrost.Commons.Html {
 
         sealed class InnerTextVisitor : HtmlNodeVisitor {
 
-            private StringBuilder text;
+            private StringBuilder _text;
 
             public InnerTextVisitor(HtmlElement e) {
-                this.text = new StringBuilder();
+                _text = new StringBuilder();
                 Visit(e);
             }
 
-            public override void VisitText(HtmlText node) {
+            protected override void VisitText(HtmlText node) {
                 if (!node.IsData) {
-                    bool preserveWhitespace = ((HtmlElement) node.Parent).PreserveWhitespace;
-                    StringUtil.AppendNormalisedText(text, node, preserveWhitespace);
+                    bool preserveWhitespace = ((HtmlElement) node.ParentElement).PreserveWhitespace;
+                    StringUtil.AppendNormalisedText(_text, node, preserveWhitespace);
                 }
             }
 
-            public override void VisitElement(HtmlElement node) {
-                StringUtil.AppendWhitespaceIfBr(node, text);
+            protected override void VisitText(DomText node) {
+                if (node is HtmlText html) {
+                    VisitText(html);
+                    return;
+                }
+                _text.Append(node.Data);
+            }
 
-                if (text.Length > 0 && node.IsBlock && !HtmlText.LastCharIsWhitespace(text))
-                    text.Append(" ");
+            protected override void VisitElement(HtmlElement node) {
+                StringUtil.AppendWhitespaceIfBr(node, _text);
+
+                if (_text.Length > 0 && node.IsBlock && !HtmlText.LastCharIsWhitespace(_text))
+                    _text.Append(" ");
 
                 base.VisitElement(node);
             }
 
             public override string ToString() {
-                return text.ToString();
+                return _text.ToString();
             }
 
         }

@@ -12,9 +12,6 @@ dotnet/test: dotnet/publish -dotnet/test
 
 -dotnet/test:
 	fspec -i dotnet/test/Carbonfrost.UnitTests.Html/Content \
-		dotnet/test/Carbonfrost.UnitTests.Html/bin/$(CONFIGURATION)/netcoreapp3.0/publish/Carbonfrost.Commons.Core.dll \
-		dotnet/test/Carbonfrost.UnitTests.Html/bin/$(CONFIGURATION)/netcoreapp3.0/publish/Carbonfrost.Commons.Core.Runtime.Expressions.dll \
-		dotnet/test/Carbonfrost.UnitTests.Html/bin/$(CONFIGURATION)/netcoreapp3.0/publish/Carbonfrost.Commons.Html.dll \
 		dotnet/test/Carbonfrost.UnitTests.Html/bin/$(CONFIGURATION)/netcoreapp3.0/publish/Carbonfrost.UnitTests.Html.dll
 
 ## Run unit tests with code coverage

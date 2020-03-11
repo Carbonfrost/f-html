@@ -83,7 +83,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                     }
 
                 } else if (t.IsStartTag &&
-                           StringUtil.Hash("caption col colgroup tbody td tfoot th thead tr").Contains(t.AsStartTag().Name)) {
+                           StringSet.Create("caption col colgroup tbody td tfoot th thead tr").Contains(t.AsStartTag().Name)) {
 
                     if (!(tb.InTableScope("td") || tb.InTableScope("th"))) {
                         tb.Error(this);

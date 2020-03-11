@@ -59,8 +59,7 @@ namespace Carbonfrost.Commons.Html.Parser {
 
                 } else if (IsWhitespace(t)
                            || t.IsComment
-                           || (t.IsStartTag && StringUtil.In(t.AsStartTag().Name,
-                                                             "basefont", "bgsound", "link", "meta", "noframes", "style"))) {
+                           || (t.IsStartTag && StringSet.Create("basefont bgsound link meta noframes style").Contains(t.AsStartTag().Name))) {
                     return tb.Process(t, InHead);
 
                 } else if (t.IsEndTag && t.AsEndTag().Name.Equals("br")) {

@@ -1,13 +1,11 @@
 //
-// - Tokeniser.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2012, 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,8 +37,7 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+using System.Linq;
 using System.Text;
 
 namespace Carbonfrost.Commons.Html.Parser {
@@ -113,8 +110,9 @@ namespace Carbonfrost.Commons.Html.Parser {
             } else if (token.Type == TokenType.EndTag) {
                 Token.EndTag endTag = (Token.EndTag) token;
 
-                if (endTag.Attributes.Count > 0)
+                if (endTag.Attributes.Any()) {
                     ParseError.AttributesPresentOnEndTagError(this);
+                }
             }
         }
 
