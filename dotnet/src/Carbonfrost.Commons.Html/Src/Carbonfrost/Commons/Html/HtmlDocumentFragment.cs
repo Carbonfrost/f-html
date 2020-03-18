@@ -15,14 +15,16 @@
 //
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml;
+using Carbonfrost.Commons.Core.Runtime;
 using Carbonfrost.Commons.Web.Dom;
-using HtmlParser = Carbonfrost.Commons.Html.Parser.Parser;
 
 namespace Carbonfrost.Commons.Html {
 
-    public class HtmlDocumentFragment : DomDocumentFragment, IHtmlNode {
+    public class HtmlDocumentFragment : DomDocumentFragment, IHtmlNode, IHtmlLoader<HtmlDocumentFragment> {
 
         public string OuterHtml {
             get {
@@ -35,16 +37,14 @@ namespace Carbonfrost.Commons.Html {
 
         public string InnerHtml {
             get {
-                StringBuilder accum = new StringBuilder();
-                var v = new OuterHtmlNodeVisitor(accum);
-                foreach (var child in ChildNodes) {
-                    v.Visit(child);
-                }
-
-                return accum.ToString().Trim();
+                return this.GetInnerHtml();
             }
             set {
-                throw new NotImplementedException();
+                // TODO Should use OwnerDocument to create and load this
+                var frag = new HtmlDocumentFragment();
+                frag.LoadHtml(value);
+                Empty();
+                Append(frag.ChildNodes);
             }
         }
 
@@ -54,19 +54,72 @@ namespace Carbonfrost.Commons.Html {
             }
         }
 
-        // TODO Remove context if possible
+        public static HtmlDocumentFragment Parse(string html) {
+            return Parse(html, null);
+        }
 
-        public static HtmlDocumentFragment Parse(string html,
-                                                 HtmlElement context,
-                                                 Uri baseUri) {
+        public static HtmlDocumentFragment Parse(string html, HtmlReaderSettings settings) {
+            return new HtmlDocumentFragment().LoadHtml(html, settings);
+        }
 
-            HtmlDocumentFragment result = new HtmlDocumentFragment {
-                BaseUri = baseUri,
-            };
-            result.Append(
-                HtmlParser.ParseFragment(html, context, baseUri).ToList()
-            );
-            return result;
+        public HtmlDocumentFragment LoadHtml(string html) {
+            return LoadHtml(html, null);
+        }
+
+        public new HtmlDocumentFragment Load(string fileName) {
+            if (fileName == null) {
+                throw new ArgumentNullException(nameof(fileName));
+            }
+            return Load(StreamContext.FromFile(fileName));
+        }
+
+        public new HtmlDocumentFragment Load(Uri source) {
+            if (source == null) {
+                throw new ArgumentNullException(nameof(source));
+            }
+            return Load(StreamContext.FromSource(source));
+        }
+
+        public new HtmlDocumentFragment Load(Stream input) {
+            if (input == null) {
+                throw new ArgumentNullException(nameof(input));
+            }
+            return Load(StreamContext.FromStream(input));
+        }
+
+        public new HtmlDocumentFragment Load(StreamContext input) {
+            if (input == null) {
+                throw new ArgumentNullException(nameof(input));
+            }
+            return LoadHtml(input.ReadAllText(), new HtmlReaderSettings {
+                BaseUri = input.Uri,
+            });
+        }
+
+        public new HtmlDocumentFragment Load(XmlReader reader) {
+            return (HtmlDocumentFragment) base.Load(reader);
+        }
+
+        protected override void LoadText(TextReader input) {
+            if (input == null) {
+                throw new ArgumentNullException(nameof(input));
+            }
+
+            LoadHtml(input.ReadToEnd(), null);
+        }
+
+        private HtmlDocumentFragment LoadHtml(string html, HtmlReaderSettings settings) {
+            settings = settings ?? HtmlReaderSettings.Default;
+
+            var treeBuilder = settings.Mode.CreateTreeBuilder();
+            BaseUri = settings.BaseUri;
+            Append(treeBuilder.ParseFragment(
+                html,
+                settings.ContextElement,
+                settings.BaseUri,
+                HtmlParseErrorCollection.Tracking(settings.MaxErrors)
+            ));
+            return this;
         }
     }
 }

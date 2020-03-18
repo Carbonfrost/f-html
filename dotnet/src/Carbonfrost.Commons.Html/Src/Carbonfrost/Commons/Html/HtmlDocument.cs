@@ -39,13 +39,16 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml;
+using Carbonfrost.Commons.Core.Runtime;
 using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html {
 
-    public partial class HtmlDocument : DomDocument, IHtmlNode {
+    public partial class HtmlDocument : DomDocument, IHtmlNode, IHtmlLoader<HtmlDocument> {
 
         internal static readonly Uri DEFAULT_URL = new Uri("file:///");
 
@@ -108,6 +111,83 @@ namespace Carbonfrost.Commons.Html {
             get {
                 return FindFirstElementByTagName("body", this);
             }
+        }
+
+        public string OuterHtml {
+            get {
+                return InnerHtml;
+            }
+            set {
+                InnerHtml = value;
+            }
+        }
+
+        public string InnerHtml {
+            get {
+                return this.GetInnerHtml();
+            }
+            set {
+                Empty();
+                Append(value);
+            }
+        }
+
+        public override string InnerText {
+            get {
+                return DocumentElement.InnerText;
+            }
+            set {
+                Body.InnerText = value;
+            }
+        }
+
+        public new HtmlDocument Load(string fileName) {
+            return (HtmlDocument) base.Load(fileName);
+        }
+
+        public new HtmlDocument Load(Uri source) {
+            return (HtmlDocument) base.Load(source);
+        }
+
+        public new HtmlDocument Load(Stream input) {
+            return (HtmlDocument) base.Load(input);
+        }
+
+        public new HtmlDocument Load(StreamContext input) {
+            return (HtmlDocument) base.Load(input);
+        }
+
+        public new HtmlDocument Load(XmlReader reader) {
+            return (HtmlDocument) base.Load(reader);
+        }
+
+        public HtmlDocument LoadHtml(string html) {
+            return LoadHtml(html, null);
+        }
+
+        protected override void LoadText(TextReader input) {
+            if (input == null) {
+                throw new ArgumentNullException(nameof(input));
+            }
+
+            LoadHtml(input.ReadToEnd(), null);
+        }
+
+        private HtmlDocument LoadHtml(string html, HtmlReaderSettings settings) {
+            settings = settings ?? HtmlReaderSettings.Default;
+
+            var treeBuilder = settings.Mode.CreateTreeBuilder();
+            treeBuilder.CreateDocument = uri => {
+                BaseUri = uri;
+                return this;
+            };
+
+            treeBuilder.Parse(
+                html,
+                settings.BaseUri,
+                HtmlParseErrorCollection.Tracking(settings.MaxErrors)
+            );
+            return this;
         }
 
         public HtmlDocument Normalize() {
@@ -207,40 +287,6 @@ namespace Carbonfrost.Commons.Html {
                 }
             }
             return null;
-        }
-
-        public string OuterHtml {
-            get {
-                return InnerHtml;
-            }
-            set {
-                InnerHtml = value;
-            }
-        }
-
-        public string InnerHtml {
-            get {
-                StringBuilder accum = new StringBuilder();
-                var v = new OuterHtmlNodeVisitor(accum);
-                foreach (var node in ChildNodes) {
-                    v.Visit(node);
-                }
-
-                return accum.ToString().Trim();
-            }
-            set {
-                Empty();
-                Append(value);
-            }
-        }
-
-        public override string InnerText {
-            get {
-                return DocumentElement.InnerText;
-            }
-            set {
-                Body.InnerText = value;
-            }
         }
     }
 }

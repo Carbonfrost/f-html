@@ -27,6 +27,7 @@ namespace Carbonfrost.Commons.Html {
 
         public HtmlSchema() : this(HTML5_NAME) {}
         public HtmlSchema(string name) : base(name) {
+            NodeTypeProvider = HtmlNodeTypeProvider.Instance;
             if (name == HTML5_NAME) {
                 AttributeDefinitions.Add(
                     new HtmlAttributeDefinition("class") {

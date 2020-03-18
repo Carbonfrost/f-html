@@ -80,11 +80,7 @@ namespace Carbonfrost.Commons.Html {
 
         public virtual string OuterHtml {
             get {
-                StringBuilder accum = new StringBuilder();
-                var v = new OuterHtmlNodeVisitor(accum);
-                v.Visit(this);
-
-                return accum.ToString().Trim();
+                return this.GetOuterHtml();
             }
             set {
                 throw new NotImplementedException();
@@ -124,13 +120,7 @@ namespace Carbonfrost.Commons.Html {
 
         public string InnerHtml {
             get {
-                StringBuilder accum = new StringBuilder();
-                var v = new OuterHtmlNodeVisitor(accum);
-                foreach (var node in ChildNodes) {
-                    v.Visit(node);
-                }
-
-                return accum.ToString().Trim();
+                return this.GetInnerHtml();
             }
             set {
                 Empty();

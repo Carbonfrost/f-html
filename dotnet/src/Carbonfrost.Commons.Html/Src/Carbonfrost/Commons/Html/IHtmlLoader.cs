@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,26 +15,19 @@
 //
 
 using System;
+using System.IO;
+using System.Xml;
+using Carbonfrost.Commons.Core.Runtime;
 using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html {
 
-    class HtmlNodeTypeProvider : IDomNodeTypeProvider {
-
-        public static readonly IDomNodeTypeProvider Instance = new HtmlNodeTypeProvider();
-
-        private HtmlNodeTypeProvider() {}
-
-        public Type GetAttributeNodeType(string name) {
-            return typeof(HtmlAttribute);
-        }
-
-        public Type GetElementNodeType(string name) {
-            return typeof(HtmlElement);
-        }
-
-        public Type GetProcessingInstructionNodeType(string target) {
-            return typeof(HtmlProcessingInstruction);
-        }
+    interface IHtmlLoader<T> where T : DomContainer, IHtmlNode {
+        T Load(string fileName);
+        T Load(Uri source);
+        T Load(Stream input);
+        T Load(StreamContext input);
+        T Load(XmlReader reader);
+        T LoadHtml(string html);
     }
 }

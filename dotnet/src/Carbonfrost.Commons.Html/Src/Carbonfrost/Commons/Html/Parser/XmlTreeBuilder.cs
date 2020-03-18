@@ -17,6 +17,8 @@
 //
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html.Parser {
@@ -26,6 +28,16 @@ namespace Carbonfrost.Commons.Html.Parser {
         protected override void InitialiseParse(String input, Uri baseUri, HtmlParseErrorCollection errors) {
             base.InitialiseParse(input, baseUri, errors);
             stack.AddLast(doc); // place the document onto the stack. differs from HtmlTreeBuilder (not on stack)
+        }
+
+        public override IList<DomNode> ParseFragment(string inputFragment, HtmlElement context, Uri baseUri, HtmlParseErrorCollection errors) {
+            InitialiseParse(inputFragment, baseUri, errors);
+            HtmlElement root = (HtmlElement) doc.CreateElement("root");
+            stack.AddLast(root);
+            RunParser();
+
+            // TODO Shouldn't need ToList when concurrent modifications can be avoided
+            return root.ChildNodes.ToList();
         }
 
         public override bool Process(Token token) {

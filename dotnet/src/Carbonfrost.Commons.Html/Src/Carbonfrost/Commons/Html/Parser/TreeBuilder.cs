@@ -37,6 +37,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html.Parser {
@@ -50,6 +51,7 @@ namespace Carbonfrost.Commons.Html.Parser {
         protected Uri baseUri; // current base uri, for creating new elements
         protected Token currentToken; // currentToken is used only for error tracking.
         protected HtmlParseErrorCollection errors; // null when not tracking errors
+        internal Func<Uri, HtmlDocument> CreateDocument = uri => new HtmlDocument(uri);
 
         public DomContainer CurrentElement {
             get {
@@ -68,7 +70,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                 throw new ArgumentNullException(nameof(input));
             }
 
-            this.doc = new HtmlDocument(baseUri);
+            this.doc = CreateDocument(baseUri);
             this.reader = new CharacterReader(input);
             this.errors = errors;
             this.tokeniser = new Tokeniser(reader, errors);
@@ -81,6 +83,8 @@ namespace Carbonfrost.Commons.Html.Parser {
             RunParser();
             return doc;
         }
+
+        public abstract IList<DomNode> ParseFragment(string inputFragment, HtmlElement context, Uri baseUri, HtmlParseErrorCollection errors);
 
         protected void RunParser() {
             Token token = null;

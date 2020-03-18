@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+using System.Linq;
 using Carbonfrost.Commons.Html;
 using Carbonfrost.Commons.Spec;
 using Carbonfrost.Commons.Web.Dom;
@@ -23,17 +24,49 @@ namespace Carbonfrost.UnitTests.Html {
     public class HtmlDocumentFragmentTests {
 
         [Fact]
-        public void script() {
-            HtmlDocument doc2 = new HtmlDocument();
-            var e = doc2.CreateElement("div");
+        public void AppendElement_defaults_to_HTML_element() {
+            Assert.IsInstanceOf<HtmlElement>(
+                new HtmlDocument().AppendElement("x")
+            );
+        }
 
+        [Fact]
+        public void Parse_should_handle_script_as_data() {
+            HtmlDocument doc2 = new HtmlDocument();
             HtmlDocumentFragment doc = HtmlDocumentFragment.Parse(
-                "<script>\"hello\"</script>", (HtmlElement) e, null);
+                "<script>\"hello\"</script>", null
+            );
             Assert.Equal("script", doc.ChildNode(0).NodeName);
 
             Assert.Equal(DomNodeType.Text, doc.ChildNode(0).ChildNode(0).NodeType);
 
             Assert.True(((HtmlText) doc.ChildNode(0).ChildNode(0)).IsData);
+        }
+
+        [Fact]
+        public void Parse_should_support_several_nodes() {
+            var settings = new HtmlReaderSettings {
+                Mode = HtmlTreeBuilderMode.Xml,
+            };
+            var xml = "<a/><b/><c hello=\"world\"/>";
+            var frag = HtmlDocumentFragment.Parse(xml, settings);
+            Assert.HasCount(3, frag.ChildNodes);
+            Assert.Equal(new [] { "a", "b", "c" }, frag.ChildNodes.Select(n => n.NodeName));
+        }
+
+        [Fact]
+        public void InnerHtml_should_replace_contents() {
+            var frag = new HtmlDocumentFragment();
+            frag.InnerHtml = "<div><br><br></div>";
+            Assert.HasCount(1, frag.ChildNodes);
+            Assert.Equal("<div>\n <br>\n <br>\n</div>", frag.InnerHtml);
+        }
+
+        [Fact]
+        public void OwnerDocument_initializes_with_Html5_by_default() {
+            var frag = new HtmlDocumentFragment();
+            Assert.NotNull(frag.OwnerDocument.Schema);
+            Assert.Equal("html5", frag.OwnerDocument.Schema.Name);
         }
     }
 }

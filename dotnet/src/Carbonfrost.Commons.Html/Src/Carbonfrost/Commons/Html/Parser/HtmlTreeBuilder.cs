@@ -39,7 +39,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Carbonfrost.Commons.Web.Dom;
 
@@ -97,7 +96,7 @@ namespace Carbonfrost.Commons.Html.Parser {
             return base.Parse(input, baseUri, errors);
         }
 
-        public IList<DomNode> ParseFragment(string inputFragment, HtmlElement context, Uri baseUri, HtmlParseErrorCollection errors) {
+        public override IList<DomNode> ParseFragment(string inputFragment, HtmlElement context, Uri baseUri, HtmlParseErrorCollection errors) {
             // context may be null
             InitialiseParse(inputFragment, baseUri, errors);
             contextElement = context;
@@ -152,10 +151,11 @@ namespace Carbonfrost.Commons.Html.Parser {
             }
 
             RunParser();
+            // TODO Shouldn't need ToList when concurrent modifications can be saved
             if (context != null)
-                return root.ChildNodes;
+                return root.ChildNodes.ToList();
             else
-                return doc.ChildNodes;
+                return doc.ChildNodes.ToList();
         }
 
         public override bool Process(Token token) {

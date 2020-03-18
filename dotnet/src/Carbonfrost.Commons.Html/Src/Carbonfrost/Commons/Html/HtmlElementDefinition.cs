@@ -95,6 +95,7 @@ namespace Carbonfrost.Commons.Html {
         }
 
         internal HtmlElementDefinition(string tagName) : base(tagName) {
+            ElementNodeType = typeof(HtmlElement);
         }
 
         public new HtmlElementDefinition Clone() {

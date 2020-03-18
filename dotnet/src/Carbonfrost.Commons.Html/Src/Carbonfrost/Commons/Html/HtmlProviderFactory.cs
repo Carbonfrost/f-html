@@ -20,6 +20,7 @@ using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html {
 
+    [DomProviderFactoryUsage(Name = "html", Extensions = ".html; .htm; .xhtml")]
     public class HtmlProviderFactory : DomProviderFactory {
 
         private static readonly Assembly THIS_ASSEMBLY = typeof(HtmlProviderFactory).Assembly;
@@ -39,7 +40,7 @@ namespace Carbonfrost.Commons.Html {
 
         protected override IDomNodeFactory CreateDomNodeFactory(IDomNodeTypeProvider nodeTypeProvider) {
             return new HtmlNodeFactory(
-                DomNodeTypeProvider.Compose(nodeTypeProvider, new HtmlNodeTypeProvider())
+                DomNodeTypeProvider.Compose(nodeTypeProvider, HtmlNodeTypeProvider.Instance)
             );
         }
 
