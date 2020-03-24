@@ -61,12 +61,11 @@ namespace Carbonfrost.Commons.Html {
             }
         }
 
-        internal HtmlText() : this("", null) {}
+        internal HtmlText() : this("") {}
 
-        internal HtmlText(string text, Uri baseUri, bool isData = false) {
+        internal HtmlText(string text, bool isData = false) {
             Data = text;
             _isData = isData;
-            BaseUri = baseUri;
         }
 
         public string InnerHtml {

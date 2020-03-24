@@ -73,12 +73,7 @@ namespace Carbonfrost.Commons.Html {
             }
         }
 
-        public HtmlDocument()
-            : this(DEFAULT_URL) {
-        }
-
-        public HtmlDocument(Uri baseUri) : base() {
-            BaseUri = baseUri;
+        public HtmlDocument() {
         }
 
         public string Title {
@@ -220,7 +215,9 @@ namespace Carbonfrost.Commons.Html {
         }
 
         internal static HtmlDocument CreateShell(Uri baseUri) {
-            HtmlDocument doc = new HtmlDocument(baseUri);
+            HtmlDocument doc = new HtmlDocument {
+                BaseUri = baseUri
+            };
             var html = doc.AppendElement("html");
             html.AppendElement("head");
             html.AppendElement("body");
@@ -242,7 +239,7 @@ namespace Carbonfrost.Commons.Html {
             for (int i = toMove.Count-1; i >= 0; i--) {
                 var node = toMove[i];
                 node.RemoveSelf();
-                Body.Prepend(new HtmlText(" ", null, false));
+                Body.Prepend(new HtmlText(" ", false));
                 Body.Prepend(node);
             }
         }

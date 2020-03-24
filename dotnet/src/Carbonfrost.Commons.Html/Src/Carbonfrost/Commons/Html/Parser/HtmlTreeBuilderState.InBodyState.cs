@@ -266,7 +266,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                             } else if (node == formatEl)
                                 goto breakINNER;
 
-                            HtmlElement replacement = new HtmlElement(node.NodeName, tb.BaseUri);
+                            HtmlElement replacement = new HtmlElement(node.NodeName);
                             tb.ReplaceActiveFormattingElement(node, replacement);
                             tb.ReplaceOnStack(node, replacement);
                             node = replacement;
@@ -294,7 +294,7 @@ namespace Carbonfrost.Commons.Html.Parser {
                             commonAncestor.Append(lastNode);
                         }
 
-                        HtmlElement adopter = new HtmlElement(name, tb.BaseUri);
+                        HtmlElement adopter = new HtmlElement(name);
                         var childNodes = furthestBlock.ChildNodes.ToArray();
                         foreach (var childNode in childNodes) {
                             adopter.Append(childNode); // append will reparent. thus the clone to avvoid concurrent mod.

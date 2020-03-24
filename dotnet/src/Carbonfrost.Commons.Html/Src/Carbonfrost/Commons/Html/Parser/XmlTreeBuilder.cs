@@ -81,7 +81,7 @@ namespace Carbonfrost.Commons.Html.Parser {
             HtmlElementDefinition tag = TagLibrary.GetTag(startTag.Name);
 
             // TODO: wonder if for xml parsing, should treat all tags as unknown? because it's not html.
-            HtmlElement el = new HtmlElement(startTag.Name, baseUri, startTag.Attributes);
+            HtmlElement el = new HtmlElement(startTag.Name, startTag.Attributes);
             InsertNode(el);
 
             if (startTag.IsSelfClosing) {
@@ -100,7 +100,7 @@ namespace Carbonfrost.Commons.Html.Parser {
 
         void Insert(Token.Comment commentToken) {
             if (commentToken.IsBogus) {
-                var comment = HtmlProcessingInstruction.Create(commentToken, baseUri);
+                var comment = HtmlProcessingInstruction.Create(doc, commentToken);
                 InsertNode(comment);
 
             } else {
@@ -110,7 +110,7 @@ namespace Carbonfrost.Commons.Html.Parser {
         }
 
         void Insert(Token.Character characterToken) {
-            var node = new HtmlText(characterToken.Data, baseUri);
+            var node = new HtmlText(characterToken.Data);
             InsertNode(node);
         }
 

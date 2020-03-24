@@ -51,7 +51,7 @@ namespace Carbonfrost.Commons.Html.Parser {
         protected Uri baseUri; // current base uri, for creating new elements
         protected Token currentToken; // currentToken is used only for error tracking.
         protected HtmlParseErrorCollection errors; // null when not tracking errors
-        internal Func<Uri, HtmlDocument> CreateDocument = uri => new HtmlDocument(uri);
+        internal Func<Uri, HtmlDocument> CreateDocument = uri => new HtmlDocument { BaseUri = uri };
 
         public DomContainer CurrentElement {
             get {
