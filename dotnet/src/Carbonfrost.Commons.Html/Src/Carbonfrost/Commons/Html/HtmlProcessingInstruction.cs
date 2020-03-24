@@ -25,16 +25,15 @@ namespace Carbonfrost.Commons.Html {
 
         static readonly Regex split = new Regex(@"\s+");
 
-        internal HtmlProcessingInstruction(string target, Uri baseUri) : base(target) {
-            BaseUri = baseUri;
+        internal HtmlProcessingInstruction(string target) : base(target) {
         }
 
-        internal static HtmlProcessingInstruction Create(Token.Comment commentToken, Uri baseUri) {
+        internal static HtmlProcessingInstruction Create(DomDocument doc, Token.Comment commentToken) {
             string fullContent = commentToken.Data.Substring(1, commentToken.Data.Length - 2);
-            return FromFullContent(fullContent, baseUri);
+            return FromFullContent(doc, fullContent);
         }
 
-        internal static HtmlProcessingInstruction FromFullContent(string text, Uri baseUri) {
+        internal static HtmlProcessingInstruction FromFullContent(DomDocument doc, string text) {
             string[] results = split.Split(text, 2);
 
             if (results.Length < 2) {
@@ -44,9 +43,9 @@ namespace Carbonfrost.Commons.Html {
 
             results[0] = results[0].Trim();
             results[1] = results[1].Trim();
-            return new HtmlProcessingInstruction(results[0], baseUri) {
-                Data = results[1]
-            };
+            var pi = (HtmlProcessingInstruction) doc.CreateProcessingInstruction(results[0]);
+            pi.Data = results[1];
+            return pi;
         }
     }
 }

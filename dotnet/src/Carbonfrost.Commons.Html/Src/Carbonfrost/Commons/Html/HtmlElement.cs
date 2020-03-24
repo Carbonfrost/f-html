@@ -80,11 +80,7 @@ namespace Carbonfrost.Commons.Html {
 
         public virtual string OuterHtml {
             get {
-                StringBuilder accum = new StringBuilder();
-                var v = new OuterHtmlNodeVisitor(accum);
-                v.Visit(this);
-
-                return accum.ToString().Trim();
+                return this.GetOuterHtml();
             }
             set {
                 throw new NotImplementedException();
@@ -124,13 +120,7 @@ namespace Carbonfrost.Commons.Html {
 
         public string InnerHtml {
             get {
-                StringBuilder accum = new StringBuilder();
-                var v = new OuterHtmlNodeVisitor(accum);
-                foreach (var node in ChildNodes) {
-                    v.Visit(node);
-                }
-
-                return accum.ToString().Trim();
+                return this.GetInnerHtml();
             }
             set {
                 Empty();
@@ -144,24 +134,19 @@ namespace Carbonfrost.Commons.Html {
             }
             set {
                 Empty();
-                HtmlText textNode = new HtmlText(value, this.BaseUri);
+                HtmlText textNode = new HtmlText(value);
                 Append(textNode);
             }
         }
 
-        internal HtmlElement(string tagName, Uri baseUri, IEnumerable<HtmlAttribute> attributes) : base(tagName) {
+        internal HtmlElement(string tagName, IEnumerable<HtmlAttribute> attributes) : base(tagName) {
             if (attributes != null) {
                 Attributes.AddMany(attributes);
             }
-            BaseUri = baseUri;
-        }
-
-        internal HtmlElement(string tagName, Uri baseUri) :
-            this(tagName, baseUri, null) {
         }
 
         internal HtmlElement(string tagName) :
-            this(tagName, null, null) {
+            this(tagName, null) {
         }
 
         internal void RemoveChild(DomNode outNode) {

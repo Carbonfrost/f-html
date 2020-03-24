@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,27 +14,19 @@
 // limitations under the License.
 //
 
-using System;
-using Carbonfrost.Commons.Web.Dom;
+using Carbonfrost.Commons.Html;
+using Carbonfrost.Commons.Spec;
 
-namespace Carbonfrost.Commons.Html {
+namespace Carbonfrost.UnitTests.Html {
 
-    class HtmlNodeTypeProvider : IDomNodeTypeProvider {
+    public class OuterHtmlVisitorTests {
 
-        public static readonly IDomNodeTypeProvider Instance = new HtmlNodeTypeProvider();
+        [Fact]
+        public void VisitElement_generates_self_closing_elements() {
+            var doc = HtmlProviderFactory.Instance.CreateDocument();
+            var ele = (HtmlElement) doc.AppendElement("br");
 
-        private HtmlNodeTypeProvider() {}
-
-        public Type GetAttributeNodeType(string name) {
-            return typeof(HtmlAttribute);
-        }
-
-        public Type GetElementNodeType(string name) {
-            return typeof(HtmlElement);
-        }
-
-        public Type GetProcessingInstructionNodeType(string target) {
-            return typeof(HtmlProcessingInstruction);
+            Assert.Equal("<br>", ele.OuterHtml);
         }
     }
 }

@@ -1,13 +1,11 @@
 //
-// - HtmlReaderSettings.cs -
-//
-// Copyright 2012 Carbonfrost Systems, Inc. (http://carbonfrost.com)
+// Copyright 2020 Carbonfrost Systems, Inc. (https://carbonfrost.com)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,31 +15,102 @@
 //
 
 using System;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html {
 
-    public class HtmlReaderSettings {
+    public class HtmlReaderSettings : DomReaderSettings {
 
-        public int MaxErrors { get; set; }
-        public bool KeepEntityReferences { get; set; }
-        public bool UseXml { get; set; }
+        public static readonly HtmlReaderSettings Default = ReadOnly(
+            new HtmlReaderSettings()
+        );
+
+        private bool _keepEntityReferences;
+        private HtmlTreeBuilderMode _mode;
+        private Uri _baseUri;
+        private string _context;
+
+        public bool KeepEntityReferences {
+            get {
+                return _keepEntityReferences;
+            }
+            set {
+                ThrowIfReadOnly();
+                _keepEntityReferences = value;
+            }
+        }
+
+        public HtmlTreeBuilderMode Mode {
+            get {
+                return _mode;
+            }
+            set {
+                ThrowIfReadOnly();
+                _mode = value;
+            }
+        }
+
+        public Uri BaseUri {
+            get {
+                return _baseUri;
+            }
+            set {
+                ThrowIfReadOnly();
+                _baseUri = value;
+            }
+        }
+
+        public string Context {
+            get {
+                return _context;
+            }
+            set {
+                ThrowIfReadOnly();
+                _context = value;
+            }
+        }
+
+        internal HtmlElement ContextElement {
+            get {
+                // Create a context element for the fragment based on the name from the
+                // settings
+                string contextName = Context;
+                if (string.IsNullOrEmpty(Context)) {
+                    contextName = "body";
+                }
+                return new HtmlElement(contextName);
+            }
+        }
 
         public HtmlReaderSettings()
-            : this(null) {
+            : this(null)
+        {
         }
 
         public HtmlReaderSettings(HtmlReaderSettings settings) {
             if (settings == null) {
-                this.MaxErrors = -1;
-
+                MaxErrors = -1;
             } else {
-                this.MaxErrors = settings.MaxErrors;
-                this.KeepEntityReferences = settings.KeepEntityReferences;
-                this.UseXml = settings.UseXml;
+                MaxErrors = settings.MaxErrors;
+                KeepEntityReferences = settings.KeepEntityReferences;
+                Mode = settings.Mode;
+                BaseUri = settings.BaseUri;
+                Context = settings.Context;
             }
         }
 
-        public HtmlReaderSettings Clone() {
+        public static HtmlReaderSettings ReadOnly(HtmlReaderSettings settings) {
+            if (settings == null) {
+                throw new ArgumentNullException(nameof(settings));
+            }
+            return (HtmlReaderSettings) settings.CloneReadOnly();
+        }
+
+        public new HtmlReaderSettings Clone() {
+            return (HtmlReaderSettings) base.Clone();
+        }
+
+        protected override DomReaderSettings CloneCore() {
             return new HtmlReaderSettings(this);
         }
     }

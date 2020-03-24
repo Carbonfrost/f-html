@@ -17,6 +17,8 @@
 //
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html.Parser {
@@ -26,6 +28,16 @@ namespace Carbonfrost.Commons.Html.Parser {
         protected override void InitialiseParse(String input, Uri baseUri, HtmlParseErrorCollection errors) {
             base.InitialiseParse(input, baseUri, errors);
             stack.AddLast(doc); // place the document onto the stack. differs from HtmlTreeBuilder (not on stack)
+        }
+
+        public override IList<DomNode> ParseFragment(string inputFragment, HtmlElement context, Uri baseUri, HtmlParseErrorCollection errors) {
+            InitialiseParse(inputFragment, baseUri, errors);
+            HtmlElement root = (HtmlElement) doc.CreateElement("root");
+            stack.AddLast(root);
+            RunParser();
+
+            // TODO Shouldn't need ToList when concurrent modifications can be avoided
+            return root.ChildNodes.ToList();
         }
 
         public override bool Process(Token token) {
@@ -69,7 +81,7 @@ namespace Carbonfrost.Commons.Html.Parser {
             HtmlElementDefinition tag = TagLibrary.GetTag(startTag.Name);
 
             // TODO: wonder if for xml parsing, should treat all tags as unknown? because it's not html.
-            HtmlElement el = new HtmlElement(startTag.Name, baseUri, startTag.Attributes);
+            HtmlElement el = new HtmlElement(startTag.Name, startTag.Attributes);
             InsertNode(el);
 
             if (startTag.IsSelfClosing) {
@@ -88,7 +100,7 @@ namespace Carbonfrost.Commons.Html.Parser {
 
         void Insert(Token.Comment commentToken) {
             if (commentToken.IsBogus) {
-                var comment = HtmlProcessingInstruction.Create(commentToken, baseUri);
+                var comment = HtmlProcessingInstruction.Create(doc, commentToken);
                 InsertNode(comment);
 
             } else {
@@ -98,7 +110,7 @@ namespace Carbonfrost.Commons.Html.Parser {
         }
 
         void Insert(Token.Character characterToken) {
-            var node = new HtmlText(characterToken.Data, baseUri);
+            var node = new HtmlText(characterToken.Data);
             InsertNode(node);
         }
 

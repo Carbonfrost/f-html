@@ -49,7 +49,7 @@ namespace Carbonfrost.UnitTests.Html.Parser {
             // test for jsoup bug #66
             string h = "<a class=lp href=/lib/14160711/>link text</a>";
             HtmlDocument doc = HtmlDocument.Parse(h);
-            var a = doc.Select("a").First();
+            var a = doc.QuerySelector("a");
             Assert.Equal("link text", a.InnerText);
             Assert.Equal("/lib/14160711/", a.Attribute("href"));
         }

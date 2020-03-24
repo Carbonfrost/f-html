@@ -43,95 +43,106 @@ namespace Carbonfrost.Commons.Html {
 
     internal class OuterHtmlNodeVisitor : HtmlNodeVisitor {
 
-        private int depth;
-        private StringBuilder output;
-        private HtmlWriterSettings settings;
+        private int _depth;
+        private readonly StringBuilder _output;
+        private readonly HtmlWriterSettings _settings;
+        private readonly Tokens _tokens;
 
-        public OuterHtmlNodeVisitor(StringBuilder accum) {
-            this.output = accum;
-            this.settings = new HtmlWriterSettings();
+        private bool PrettyPrint {
+            get {
+                return _settings.PrettyPrint;
+            }
+        }
+
+        public OuterHtmlNodeVisitor(StringBuilder accum, bool xml = false) {
+            _output = accum;
+            _settings = new HtmlWriterSettings();
+            _tokens = xml ? Tokens.Xml : Tokens.Html;
         }
 
         // `HtmlNodeVisitor' implementation
         protected override void VisitEntityReference(DomEntityReference node) {
-            output.Append("&")
+            _output.Append("&")
                 .Append(node.NodeName);
         }
 
         protected override void VisitCDataSection(DomCDataSection node) {
-            output.Append("<!CDATA[")
+            _output.Append("<!CDATA[")
                 .Append(node.TextContent)
                 .Append("]]>");
         }
 
         protected override void VisitDocumentType(DomDocumentType node) {
-            output.Append("<!DOCTYPE ").Append(node.Name);
+            _output.Append("<!DOCTYPE ").Append(node.Name);
 
             if (!StringUtil.IsBlank(node.PublicId))
-                output.Append(" PUBLIC \"")
+                _output.Append(" PUBLIC \"")
                     .Append(node.PublicId)
                     .Append("\"");
 
             if (!StringUtil.IsBlank(node.SystemId))
-                output.Append(" \"")
+                _output.Append(" \"")
                     .Append(node.SystemId)
                     .Append("\"");
 
-            output.Append('>');
+            _output.Append('>');
         }
 
         protected override void VisitElement(HtmlElement node) {
-            if (output.Length > 0 && settings.PrettyPrint
+            if (_output.Length > 0 && PrettyPrint
                 && (node.Tag.FormatAsBlock || (node.Parent is HtmlElement parent && parent.Tag.FormatAsBlock))) {
                 Indent();
-                }
+            }
 
-            output.Append("<")
+            _output.Append("<")
                 .Append(node.Tag.Name);
 
             foreach (HtmlAttribute attribute in node.Attributes) {
-                output.Append(" ");
-                attribute.AppendHtml(output, settings);
+                _output.Append(" ");
+                attribute.AppendHtml(_output, _settings);
             }
 
             if (node.ChildNodes.IsEmpty() && node.Tag.IsSelfClosing)
-                output.Append(" />");
+                _output.Append(_tokens.SelfCloseTag);
             else
-                output.Append(">");
+                _output.Append(">");
 
-            depth++;
+            _depth++;
 
             base.VisitElement(node);
 
-            --depth;
+            --_depth;
             if (!(node.ChildNodes.IsEmpty() && node.Tag.IsSelfClosing)) {
-                if (settings.PrettyPrint && !node.ChildNodes.IsEmpty() && node.Tag.FormatAsBlock)
+                if (PrettyPrint && !node.ChildNodes.IsEmpty() && node.Tag.FormatAsBlock) {
                     Indent();
-                output.Append("</").Append(node.Tag.Name).Append(">");
+                }
+                _output.Append("</").Append(node.Tag.Name).Append(">");
             }
         }
 
         protected override void VisitProcessingInstruction(HtmlProcessingInstruction node) {
-            if (settings.PrettyPrint)
+            if (PrettyPrint) {
                 Indent();
+            }
 
-            output
+            _output
                 .Append("<?")
                 .Append(node.TextContent)
                 .Append("?>");
         }
 
         protected override void VisitComment(DomComment node) {
-            if (settings.PrettyPrint)
+            if (PrettyPrint) {
                 Indent();
-            output
+            }
+            _output
                 .Append("<!--")
                 .Append(node.Text)
                 .Append("-->");
         }
 
         protected override void VisitText(DomText text) {
-            output.Append(text.Data);
+            _output.Append(text.Data);
         }
 
         protected override void VisitText(HtmlText node) {
@@ -140,24 +151,57 @@ namespace Carbonfrost.Commons.Html {
                 html = node.Data;
 
             } else {
-                html = HtmlEncoder.Escape(node.Data, settings.Charset.GetEncoder(), settings.EscapeMode);
+                html = HtmlEncoder.Escape(node.Data, _settings.Charset.GetEncoder(), _settings.EscapeMode);
 
-                if (settings.PrettyPrint
+                if (PrettyPrint
                     && node.ParentElement is HtmlElement
                     && !((HtmlElement) node.ParentElement).PreserveWhitespace) {
                     html = StringUtil.NormalizeWhitespace(html);
                 }
 
-                if (settings.PrettyPrint && node.NodePosition == 0
-                    && node.ParentElement is HtmlElement && ((HtmlElement) node.ParentElement).Tag.FormatAsBlock && !node.IsBlank)
+                if (PrettyPrint && node.NodePosition == 0
+                    && node.ParentElement is HtmlElement && ((HtmlElement) node.ParentElement).Tag.FormatAsBlock && !node.IsBlank) {
                     Indent();
+                }
             }
 
-            output.Append(html);
+            _output.Append(html);
         }
 
         private void Indent() {
-            output.Append("\n").Append(' ' , depth * settings.Indent);
+            _output.Append("\n").Append(' ' , _depth * _settings.Indent);
+        }
+
+        struct Tokens {
+            public static readonly Tokens Xml = new Tokens("/>");
+            public static readonly Tokens Html = new Tokens(">");
+
+            public readonly string SelfCloseTag;
+
+            private Tokens(string selfCloseTag) {
+                SelfCloseTag = selfCloseTag;
+            }
+        }
+    }
+
+    partial class Extensions {
+
+        internal static string GetOuterHtml(this IHtmlNode node) {
+            var accum = new StringBuilder();
+            var v = new OuterHtmlNodeVisitor(accum);
+            v.Visit((DomNode) node);
+
+            return accum.ToString().Trim();
+        }
+
+        internal static string GetInnerHtml(this IHtmlNode self) {
+            var accum = new StringBuilder();
+            var v = new OuterHtmlNodeVisitor(accum);
+            foreach (var node in ((DomNode) self).ChildNodes) {
+                v.Visit(node);
+            }
+
+            return accum.ToString().Trim();
         }
     }
 }

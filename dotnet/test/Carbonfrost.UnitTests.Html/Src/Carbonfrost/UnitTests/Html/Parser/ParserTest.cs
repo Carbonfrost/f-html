@@ -67,17 +67,17 @@ namespace Carbonfrost.UnitTests.Html.Parser {
         public void parses_unterminated_textarea() {
             // don't parse right to end, but break on <p>
             HtmlDocument doc = HtmlDocument.Parse("<body><p><textarea>one<p>two");
-            var t = doc.Select("textarea").First();
+            var t = doc.QuerySelector("textarea");
             Assert.Equal("one", t.InnerText);
-            Assert.Equal("two", doc.Select("p")[1].InnerText);
+            Assert.Equal("two", doc.QuerySelectorAll("p")[1].InnerText);
         }
 
         [Fact]
         public void parses_unterminated_option() {
             // bit weird this -- browsers and spec get stuck in select until there's a </select>
             HtmlDocument doc = HtmlDocument.Parse("<body><p><select><option>One<option>Two</p><p>Three</p>");
-            var options = doc.Select("option");
-            Assert.Equal(2, options.Count());
+            var options = doc.QuerySelectorAll("option");
+            Assert.Equal(2, options.Count);
             Assert.Equal("One", options.First().InnerText);
             Assert.Equal("TwoThree", options.Last().InnerText);
         }
@@ -196,7 +196,7 @@ namespace Carbonfrost.UnitTests.Html.Parser {
         public void handles_what_wg_expenses_table_example() {
             // http://www.whatwg.org/specs/web-apps/current-work/multipage/tabular-data.html#examples-0
             HtmlDocument doc = HtmlDocument.Parse("<table> <colgroup> <col> <colgroup> <col> <col> <col> <thead> <tr> <th> <th>2008 <th>2007 <th>2006 <tbody> <tr> <th scope=rowgroup> Research and development <td> $ 1,109 <td> $ 782 <td> $ 712 <tr> <th scope=row> Percentage of net sales <td> 3.4% <td> 3.3% <td> 3.7% <tbody> <tr> <th scope=rowgroup> Selling, general, and administrative <td> $ 3,761 <td> $ 2,963 <td> $ 2,433 <tr> <th scope=row> Percentage of net sales <td> 11.6% <td> 12.3% <td> 12.6% </table>");
-            Assert.Equal("<table> <colgroup> <col /> </colgroup><colgroup> <col /> <col /> <col /> </colgroup><thead> <tr> <th> </th><th>2008 </th><th>2007 </th><th>2006 </th></tr></thead><tbody> <tr> <th scope=\"rowgroup\"> Research and development </th><td> $ 1,109 </td><td> $ 782 </td><td> $ 712 </td></tr><tr> <th scope=\"row\"> Percentage of net sales </th><td> 3.4% </td><td> 3.3% </td><td> 3.7% </td></tr></tbody><tbody> <tr> <th scope=\"rowgroup\"> Selling, general, and administrative </th><td> $ 3,761 </td><td> $ 2,963 </td><td> $ 2,433 </td></tr><tr> <th scope=\"row\"> Percentage of net sales </th><td> 11.6% </td><td> 12.3% </td><td> 12.6% </td></tr></tbody></table>", TextUtil.StripNewLines(doc.Body.InnerHtml));
+            Assert.Equal("<table> <colgroup> <col> </colgroup><colgroup> <col> <col> <col> </colgroup><thead> <tr> <th> </th><th>2008 </th><th>2007 </th><th>2006 </th></tr></thead><tbody> <tr> <th scope=\"rowgroup\"> Research and development </th><td> $ 1,109 </td><td> $ 782 </td><td> $ 712 </td></tr><tr> <th scope=\"row\"> Percentage of net sales </th><td> 3.4% </td><td> 3.3% </td><td> 3.7% </td></tr></tbody><tbody> <tr> <th scope=\"rowgroup\"> Selling, general, and administrative </th><td> $ 3,761 </td><td> $ 2,963 </td><td> $ 2,433 </td></tr><tr> <th scope=\"row\"> Percentage of net sales </th><td> 11.6% </td><td> 12.3% </td><td> 12.6% </td></tr></tbody></table>", TextUtil.StripNewLines(doc.Body.InnerHtml));
         }
 
         [Fact]
@@ -259,14 +259,14 @@ namespace Carbonfrost.UnitTests.Html.Parser {
         public void handles_invalid_start_tags() {
             string h = "<div>Hello < There <&amp;></div>"; // parse to <div {#text=Hello < There <&>}>
             HtmlDocument doc = HtmlDocument.Parse(h);
-            Assert.Equal("Hello < There <&>", doc.Select("div").First().InnerText);
+            Assert.Equal("Hello < There <&>", doc.QuerySelector("div").InnerText);
         }
 
         [Fact]
         public void handles_unknown_tags() {
             string h = "<div><foo title=bar>Hello<foo title=qux>there</foo></div>";
             HtmlDocument doc = HtmlDocument.Parse(h);
-            var foos = doc.Select("foo");
+            var foos = doc.QuerySelectorAll("foo");
             Assert.Equal(2, foos.Count());
             Assert.Equal("bar", foos.First().Attribute("title"));
             Assert.Equal("qux", foos.Last().Attribute("title"));
@@ -286,7 +286,7 @@ namespace Carbonfrost.UnitTests.Html.Parser {
             string h = "<!-- comment --><p><a href='foo'>One</a></p>";
             HtmlDocument doc = HtmlParser.ParseBodyFragment(h, new Uri("http://example.com"));
             Assert.Equal("<body><!-- comment --><p><a href=\"foo\">One</a></p></body>", TextUtil.StripNewLines(doc.Body.OuterHtml));
-            var a = doc.Select("a").First();
+            var a = doc.QuerySelector("a");
             Assert.Equal(new Uri("http://example.com/foo"), new Uri(a.BaseUri, a.Attribute("href")));
         }
 
@@ -295,7 +295,7 @@ namespace Carbonfrost.UnitTests.Html.Parser {
             // note that the first foo:bar should not really be allowed to be self closing, if parsed in html mode.
             string h = "<foo:bar id='1' /><abc:def id=2>Foo<p>Hello</p></abc:def><foo:bar>There</foo:bar>";
             HtmlDocument doc = HtmlDocument.Parse(h);
-            Assert.Equal("<foo:bar id=\"1\" /><abc:def id=\"2\">Foo<p>Hello</p></abc:def><foo:bar>There</foo:bar>", TextUtil.StripNewLines(doc.Body.InnerHtml));
+            Assert.Equal("<foo:bar id=\"1\"><abc:def id=\"2\">Foo<p>Hello</p></abc:def><foo:bar>There</foo:bar>", TextUtil.StripNewLines(doc.Body.InnerHtml));
         }
 
         [Fact]
@@ -354,7 +354,7 @@ namespace Carbonfrost.UnitTests.Html.Parser {
         public void handles_frames() {
             string h = "<html><head><script></script><noscript></noscript></head><frameset><frame src=foo></frame><frame src=foo></frameset></html>";
             HtmlDocument doc = HtmlDocument.Parse(h);
-            Assert.Equal("<html><head><script></script><noscript></noscript></head><frameset><frame src=\"foo\" /><frame src=\"foo\" /></frameset></html>",
+            Assert.Equal("<html><head><script></script><noscript></noscript></head><frameset><frame src=\"foo\"><frame src=\"foo\"></frameset></html>",
                             TextUtil.StripNewLines(doc.OuterHtml));
             // no body auto vivification
         }
@@ -373,7 +373,7 @@ namespace Carbonfrost.UnitTests.Html.Parser {
         public void handles_base_without_href() {
             string h = "<head><base target='_blank'></head><body><a href=/foo>Test</a></body>";
             HtmlDocument doc = HtmlDocument.Parse(h, new Uri("http://example.com/"));
-            var a = doc.Select("a").First();
+            var a = doc.QuerySelector("a");
             Assert.Equal(new Uri("http://example.com"), a.BaseUri);
             Assert.Equal("/foo", a.Attribute("href"));
             Assert.Equal(new Uri("http://example.com/foo"), new Uri(a.BaseUri, a.Attribute("href")));
@@ -383,7 +383,7 @@ namespace Carbonfrost.UnitTests.Html.Parser {
         public void normalises_document() {
             string h = "<!doctype html>One<html>Two<head>Three<link></head>Four<body>Five </body>Six </html>Seven ";
             HtmlDocument doc = HtmlDocument.Parse(h);
-            Assert.Equal("<!DOCTYPE html><html><head></head><body>OneTwoThree<link />FourFive Six Seven </body></html>",
+            Assert.Equal("<!DOCTYPE html><html><head></head><body>OneTwoThree<link>FourFive Six Seven </body></html>",
                             TextUtil.StripNewLines(doc.InnerHtml));
         }
 
@@ -414,7 +414,7 @@ namespace Carbonfrost.UnitTests.Html.Parser {
             string h = "<meta http-equiv=Content-Type content=text/html; charset=gb2312>";
             // example cited for reason of html5's <meta charset> element
             HtmlDocument doc = HtmlDocument.Parse(h);
-            Assert.Equal("gb2312", doc.Select("meta").First().Attribute("charset"));
+            Assert.Equal("gb2312", doc.QuerySelector("meta").Attribute("charset"));
         }
 
         [Fact]
@@ -449,7 +449,7 @@ namespace Carbonfrost.UnitTests.Html.Parser {
         public void test_no_images_in_no_script_in_head() {
             // jsoup used to allow, but against spec if parsing with noscript
             HtmlDocument doc = HtmlDocument.Parse("<html><head><noscript><img src='foo'></noscript></head><body><p>Hello</p></body></html>");
-            Assert.Equal("<html><head><noscript></noscript></head><body><img src=\"foo\" /><p>Hello</p></body></html>", TextUtil.StripNewLines(doc.InnerHtml));
+            Assert.Equal("<html><head><noscript></noscript></head><body><img src=\"foo\"><p>Hello</p></body></html>", TextUtil.StripNewLines(doc.InnerHtml));
         }
 
         [Fact]
@@ -581,7 +581,7 @@ namespace Carbonfrost.UnitTests.Html.Parser {
         public void handles_unclosed_title() {
             HtmlDocument one = HtmlDocument.Parse("<title>One <b>Two <b>Three</TITLE><p>Test</p>"); // has title, so <b> is plain text
             Assert.Equal("One <b>Two <b>Three", one.Title);
-            Assert.Equal("Test", one.Select("p").First().InnerText);
+            Assert.Equal("Test", one.QuerySelector("p").InnerText);
 
             HtmlDocument two = HtmlDocument.Parse("<title>One<b>Two <p>Test</p>"); // no title, so <b> causes </title> breakout
             Assert.Equal("One", two.Title);

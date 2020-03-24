@@ -39,7 +39,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Carbonfrost.Commons.Web.Dom;
 
@@ -50,7 +49,7 @@ namespace Carbonfrost.Commons.Html.Parser {
         private HtmlTreeBuilderState _state; // the current state
         private HtmlTreeBuilderState _originalState; // original / marked state
 
-        private bool baseUriSetFromDoc = false;
+        private bool _baseUriSetFromDoc = false;
         private HtmlElement headElement; // the current head element
         private HtmlElement formElement; // the current form element
         private HtmlElement contextElement; // fragment parse context -- could be null even if fragment parsing
@@ -97,7 +96,7 @@ namespace Carbonfrost.Commons.Html.Parser {
             return base.Parse(input, baseUri, errors);
         }
 
-        public IList<DomNode> ParseFragment(string inputFragment, HtmlElement context, Uri baseUri, HtmlParseErrorCollection errors) {
+        public override IList<DomNode> ParseFragment(string inputFragment, HtmlElement context, Uri baseUri, HtmlParseErrorCollection errors) {
             // context may be null
             InitialiseParse(inputFragment, baseUri, errors);
             contextElement = context;
@@ -152,10 +151,11 @@ namespace Carbonfrost.Commons.Html.Parser {
             }
 
             RunParser();
+            // TODO Shouldn't need ToList when concurrent modifications can be saved
             if (context != null)
-                return root.ChildNodes;
+                return root.ChildNodes.ToList();
             else
-                return doc.ChildNodes;
+                return doc.ChildNodes.ToList();
         }
 
         public override bool Process(Token token) {
@@ -183,15 +183,16 @@ namespace Carbonfrost.Commons.Html.Parser {
         }
 
         public void MaybeSetBaseUri(HtmlElement base3) {
-            if (baseUriSetFromDoc) // only listen to the first <base href> in parse
+            if (_baseUriSetFromDoc) { // only listen to the first <base href> in parse
                 return;
+            }
 
             // TODO Should be absolute URL
             string href = base3.Attribute("href");
             if (href.Length != 0) { // ignore <base target> etc
                 baseUri = new Uri(href, UriKind.RelativeOrAbsolute);
-                baseUriSetFromDoc = true;
-                doc.BaseUri = new Uri(href, UriKind.RelativeOrAbsolute); // set on the doc so doc.createElement(Tag) will get updated base, and to update all descendants
+                _baseUriSetFromDoc = true;
+                doc.BaseUri = new Uri(href, UriKind.RelativeOrAbsolute);
             }
         }
 
@@ -212,13 +213,13 @@ namespace Carbonfrost.Commons.Html.Parser {
                 return el;
             }
 
-            HtmlElement elx = new HtmlElement(startTag.Name, baseUri, startTag.Attributes);
+            HtmlElement elx = new HtmlElement(startTag.Name, startTag.Attributes);
             Insert(elx);
             return elx;
         }
 
         public HtmlElement Insert(string startTagName) {
-            HtmlElement el = new HtmlElement(startTagName, baseUri);
+            HtmlElement el = new HtmlElement(startTagName);
             Insert(el);
             return el;
         }
@@ -231,7 +232,7 @@ namespace Carbonfrost.Commons.Html.Parser {
         public HtmlElement InsertEmpty(Token.StartTag startTag) {
             // TODO Use the semantic element here (via the factory)
             HtmlElementDefinition tag = TagLibrary.GetTag(startTag.Name);
-            HtmlElement el = new HtmlElement(startTag.Name, baseUri, startTag.Attributes);
+            HtmlElement el = new HtmlElement(startTag.Name, startTag.Attributes);
 
             InsertNode(el);
             if (startTag.IsSelfClosing) {
@@ -249,7 +250,7 @@ namespace Carbonfrost.Commons.Html.Parser {
 
         public void Insert(Token.Comment commentToken) {
             if (commentToken.IsBogus) {
-                var pi = HtmlProcessingInstruction.Create(commentToken, baseUri);
+                var pi = HtmlProcessingInstruction.Create(doc, commentToken);
                 InsertNode(pi);
 
             } else {
@@ -262,9 +263,9 @@ namespace Carbonfrost.Commons.Html.Parser {
             DomNode node;
             // characters in script and style go in as datanodes, not text nodes
             if (CurrentElement.NodeName.In("script", "style"))
-                node = new HtmlText(characterToken.Data, baseUri, true);
+                node = new HtmlText(characterToken.Data, true);
             else
-                node = new HtmlText(characterToken.Data, baseUri);
+                node = new HtmlText(characterToken.Data);
 
             CurrentElement.Append(node); // doesn't use insertNode, because we don't foster these; and will always have a stack.
         }

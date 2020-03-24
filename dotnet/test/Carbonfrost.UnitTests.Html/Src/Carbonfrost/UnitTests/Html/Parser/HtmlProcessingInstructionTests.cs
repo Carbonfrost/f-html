@@ -36,7 +36,7 @@ namespace Carbonfrost.UnitTests.Html {
         [Fact]
         public void FromFullContent_split_target_and_data_nominal() {
             string h = "xml version=\"1.0\" encoding=\"UTF-8\"";
-            HtmlProcessingInstruction pi = HtmlProcessingInstruction.FromFullContent(h, null);
+            HtmlProcessingInstruction pi = HtmlProcessingInstruction.FromFullContent(new HtmlDocument(), h);
             Assert.Equal("xml", pi.Target);
             Assert.Equal("version=\"1.0\" encoding=\"UTF-8\"", pi.Data);
             Assert.Equal("version=\"1.0\" encoding=\"UTF-8\"", pi.TextContent);
@@ -45,7 +45,7 @@ namespace Carbonfrost.UnitTests.Html {
         [Fact]
         public void FromFullContent_split_target_and_data_no_data() {
             string h = "xmlversion=\"1.0\"encoding=\"UTF-8\"";
-            HtmlProcessingInstruction pi = HtmlProcessingInstruction.FromFullContent(h, null);
+            HtmlProcessingInstruction pi = HtmlProcessingInstruction.FromFullContent(new HtmlDocument(), h);
             Assert.Equal("xmlversion=\"1.0\"encoding=\"UTF-8\"", pi.Target);
             Assert.Equal("", pi.Data);
         }
@@ -53,7 +53,7 @@ namespace Carbonfrost.UnitTests.Html {
         [Fact]
         public void FromFullContent_should_get_node_name_same_as_target() {
             string h = "xml version=\"1.0\" encoding=\"UTF-8\"";
-            HtmlProcessingInstruction pi = HtmlProcessingInstruction.FromFullContent(h, null);
+            HtmlProcessingInstruction pi = HtmlProcessingInstruction.FromFullContent(new HtmlDocument(), h);
             Assert.Equal("xml", pi.NodeName);
         }
     }

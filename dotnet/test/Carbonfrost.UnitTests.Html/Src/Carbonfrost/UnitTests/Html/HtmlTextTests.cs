@@ -26,7 +26,7 @@ namespace Carbonfrost.UnitTests.Html {
         [InlineData(" has leading whitespace")]
         [InlineData(" has trailing whitespace ")]
         public void OuterHtml_should_get_text_as_is(string expected) {
-            var text = new HtmlText(expected, null);
+            var text = new HtmlText(expected);
             Assert.Equal(expected, text.OuterHtml);
         }
 
@@ -35,8 +35,8 @@ namespace Carbonfrost.UnitTests.Html {
         [InlineData(" has leading whitespace")]
         [InlineData(" has trailing whitespace ")]
         public void ToHtmlString_should_get_text_as_is(string expected) {
-            var ele = new HtmlElement("b", null);
-            var text = new HtmlText(expected, null);
+            var ele = new HtmlElement("b");
+            var text = new HtmlText(expected);
 
             Assert.Equal($"<b>{expected}</b>", ele.Append(text).OuterHtml);
         }
