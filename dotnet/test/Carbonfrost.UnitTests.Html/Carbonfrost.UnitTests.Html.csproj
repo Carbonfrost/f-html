@@ -1,8 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="../../Build.props" />
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
-    <KeyOriginatorFile>../../F5NonCommercial.snk</KeyOriginatorFile>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

@@ -1,5 +1,3 @@
-# This file was generated.  Investigate `make .editorconfig' to update
-root = true
 [*]
 insert_final_newline = true
 indent_style = space
@@ -15,11 +13,3 @@ indent_size = 4
 [*.mk]
 indent_style = tab
 indent_size = 4
-
-[*.cs]
-charset = utf-8
-indent_style = space
-indent_size = 4
-
-[*.csproj]
-indent_size = 2
