@@ -14,50 +14,29 @@
 // limitations under the License.
 //
 
+using System;
 using System.Text;
-using Carbonfrost.Commons.Core;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html {
 
-    public class HtmlWriterSettings {
+    public class HtmlWriterSettings : DomWriterSettings {
 
         internal static readonly HtmlWriterSettings Default = new HtmlWriterSettings();
 
-        private bool isSealed;
-        private EscapeMode escapeMode = EscapeMode.Base;
+        private EscapeMode _escapeMode = EscapeMode.Base;
         private Encoding _charset = Encoding.UTF8;
         private Encoder _charsetEncoder = Encoding.UTF8.GetEncoder();
-        private bool _prettyPrint = true;
+        private bool _isXhtml;
         private int _indentAmount = 1;
-
-        public bool PrettyPrint {
-            get {
-                return _prettyPrint;
-            }
-            set {
-                _prettyPrint = value;
-            }
-        }
-
-        public int Indent {
-            get {
-                return _indentAmount;
-            }
-            set {
-                if (value < 0)
-                    throw Failure.Negative("value", value);
-
-                this._indentAmount = value;
-            }
-        }
 
         public EscapeMode EscapeMode {
             get {
-                return escapeMode;
+                return _escapeMode;
             }
             set {
-                ThrowIfSealed();
-                this.escapeMode = value;
+                ThrowIfReadOnly();
+                _escapeMode = value;
             }
         }
 
@@ -66,28 +45,50 @@ namespace Carbonfrost.Commons.Html {
                 return _charset;
             }
             set {
+                ThrowIfReadOnly();
                 // TODO: this should probably update the doc's meta charset
-                this._charset = value;
+                _charset = value;
                 _charsetEncoder = value.GetEncoder();
             }
         }
 
         public bool IsXhtml {
-            get; set;
+            get {
+                return _isXhtml;
+            }
+            set {
+                ThrowIfReadOnly();
+                _isXhtml = value;
+            }
         }
 
-        public HtmlWriterSettings Clone() {
-            HtmlWriterSettings result = (HtmlWriterSettings) MemberwiseClone();
-            return result;
+        public HtmlWriterSettings(HtmlWriterSettings settings) {
+            if (settings != null) {
+                IsXhtml = settings.IsXhtml;
+                Charset = settings.Charset;
+                EscapeMode = settings.EscapeMode;
+                Indent = settings.Indent;
+                IndentWidth = settings.IndentWidth;
+            }
         }
 
-        void ThrowIfSealed() {
-            if (this.isSealed)
-                throw Failure.Sealed();
+        public HtmlWriterSettings() {
+            Indent = true;
         }
 
-        internal void Seal() {
-            this.isSealed = true;
+        public static HtmlWriterSettings ReadOnly(HtmlWriterSettings settings) {
+            if (settings == null) {
+                throw new ArgumentNullException(nameof(settings));
+            }
+            return (HtmlWriterSettings) settings.CloneReadOnly();
+        }
+
+        public new HtmlWriterSettings Clone() {
+            return (HtmlWriterSettings) base.Clone();
+        }
+
+        protected override DomWriterSettings CloneCore() {
+            return new HtmlWriterSettings(this);
         }
     }
 }

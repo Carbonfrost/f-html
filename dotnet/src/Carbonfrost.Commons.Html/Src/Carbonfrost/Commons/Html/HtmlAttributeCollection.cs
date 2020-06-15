@@ -79,7 +79,7 @@ namespace Carbonfrost.Commons.Html {
             if (item == null) {
                 throw new ArgumentNullException(nameof(item));
             }
-            _map.Add(item.Name, item);
+            _map.Add(item.LocalName, item);
             _values.AddLast(item);
         }
     }

@@ -209,7 +209,7 @@ namespace Carbonfrost.Commons.Html.Parser {
             // when the spec expects an empty tag, will directly hit insertEmpty, so won't generate fake end tag.
             if (startTag.IsSelfClosing && !this.TagLibrary.IsKnownTag(startTag.Name)) {
                 HtmlElement el = InsertEmpty(startTag);
-                Process(new Token.EndTag(el.Tag.Name)); // ensure we get out of whatever state we are in
+                Process(new Token.EndTag(el.Tag.LocalName)); // ensure we get out of whatever state we are in
                 return el;
             }
 

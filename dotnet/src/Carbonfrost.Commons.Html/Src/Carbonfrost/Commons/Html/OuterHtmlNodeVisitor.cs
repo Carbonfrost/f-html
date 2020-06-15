@@ -50,13 +50,15 @@ namespace Carbonfrost.Commons.Html {
 
         private bool PrettyPrint {
             get {
-                return _settings.PrettyPrint;
+                return _settings.Indent;
             }
         }
 
         public OuterHtmlNodeVisitor(StringBuilder accum, bool xml = false) {
             _output = accum;
-            _settings = new HtmlWriterSettings();
+            _settings = new HtmlWriterSettings {
+                IndentWidth = 1,
+            };
             _tokens = xml ? Tokens.Xml : Tokens.Html;
         }
 
@@ -169,7 +171,7 @@ namespace Carbonfrost.Commons.Html {
         }
 
         private void Indent() {
-            _output.Append("\n").Append(' ' , _depth * _settings.Indent);
+            _output.Append("\n").Append(' ' , _depth * _settings.IndentWidth);
         }
 
         struct Tokens {

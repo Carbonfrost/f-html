@@ -88,11 +88,11 @@ namespace Carbonfrost.UnitTests.Html {
 
             Assert.Equal(
                 typeof(HtmlElement),
-                nodeFactory.GetElementNodeType("x")
+                nodeFactory.GetElementNodeType(DomName.Create("x"))
             );
 
             Assert.IsInstanceOf<HtmlElement>(
-                nodeFactory.CreateElement("x")
+                nodeFactory.CreateElement(DomName.Create("x"))
             );
         }
     }

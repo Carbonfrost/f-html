@@ -17,9 +17,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Carbonfrost.Commons.Core" Version="0.3.0" />
-    <PackageReference Include="Carbonfrost.Commons.Core.Runtime.Expressions" Version="0.2.0" />
-    <PackageReference Include="Carbonfrost.Commons.Web.Dom" Version="0.4.0" />
+    <PackageReference Include="Carbonfrost.Commons.Core" Version="0.4.0" />
+    <PackageReference Include="Carbonfrost.Commons.Core.Runtime.Expressions" Version="0.3.0" />
+    <PackageReference Include="Carbonfrost.Commons.Web.Dom" Version="0.5.0" />
   </ItemGroup>
 
   <ItemGroup>

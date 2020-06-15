@@ -66,7 +66,7 @@ namespace Carbonfrost.UnitTests.Html {
         public void OwnerDocument_initializes_with_Html5_by_default() {
             var frag = new HtmlDocumentFragment();
             Assert.NotNull(frag.OwnerDocument.Schema);
-            Assert.Equal("html5", frag.OwnerDocument.Schema.Name);
+            Assert.Equal("html5", frag.OwnerDocument.Schema.LocalName);
         }
     }
 }

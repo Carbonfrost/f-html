@@ -17,6 +17,7 @@
 using Carbonfrost.Commons.Core.Runtime;
 using Carbonfrost.Commons.Html;
 using Carbonfrost.Commons.Spec;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.UnitTests.Html {
 
@@ -36,7 +37,7 @@ namespace Carbonfrost.UnitTests.Html {
         [Fact]
         public void NodeFactory_creates_HTML_elements() {
             Assert.IsInstanceOf<HtmlElement>(
-                new HtmlDocument().NodeFactory.CreateElement("any")
+                new HtmlDocument().NodeFactory.CreateElement(DomName.Create("any"))
             );
         }
 

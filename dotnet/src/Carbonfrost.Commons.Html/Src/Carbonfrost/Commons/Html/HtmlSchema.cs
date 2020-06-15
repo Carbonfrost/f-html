@@ -39,12 +39,14 @@ namespace Carbonfrost.Commons.Html {
         }
 
         internal HtmlElementDefinition GetTag(string tagName) {
-            if (tagName == null)
-                throw new ArgumentNullException("tagName");
+            if (tagName == null) {
+                throw new ArgumentNullException(nameof(tagName));
+            }
 
             tagName = tagName.Trim().ToLowerInvariant();
-            if (tagName.Length == 0)
-                throw Failure.AllWhitespace("tagName");
+            if (tagName.Length == 0) {
+                throw Failure.AllWhitespace(nameof(tagName));
+            }
 
             // TODO This behavior causes any undefined tag to be
             // added to HTML 5 (need different behavior)
@@ -65,21 +67,31 @@ namespace Carbonfrost.Commons.Html {
         }
 
         internal bool IsKnownTag(string tagName) {
-            if (tagName == null)
-                throw new ArgumentNullException("tagName");
-            if (tagName.Length == 0)
-                throw Failure.EmptyString("tagName");
+            if (tagName == null) {
+                throw new ArgumentNullException(nameof(tagName));
+            }
+            if (tagName.Length == 0) {
+                throw Failure.EmptyString(nameof(tagName));
+            }
 
             var tag = ElementDefinitions[tagName] as HtmlElementDefinition;
             return tag != null && !tag.IsUnknownTag;
         }
 
         public new HtmlAttributeDefinition GetAttributeDefinition(string name) {
+            return (HtmlAttributeDefinition) base.GetDomAttributeDefinition(DomName.Create(name));
+        }
+
+        public new HtmlAttributeDefinition GetAttributeDefinition(DomName name) {
             return (HtmlAttributeDefinition) base.GetDomAttributeDefinition(name);
         }
 
-        public new HtmlElementDefinition GetElementDefinition(string name) {
+        public new HtmlElementDefinition GetElementDefinition(DomName name) {
             return (HtmlElementDefinition) base.GetDomElementDefinition(name);
+        }
+
+        public new HtmlElementDefinition GetElementDefinition(string name) {
+            return (HtmlElementDefinition) base.GetDomElementDefinition(DomName.Create(name));
         }
     }
 

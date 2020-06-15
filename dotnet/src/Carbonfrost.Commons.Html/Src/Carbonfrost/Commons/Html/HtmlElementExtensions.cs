@@ -18,9 +18,16 @@
 
 using System;
 using System.Collections.Generic;
+using Carbonfrost.Commons.Web.Dom;
 
 namespace Carbonfrost.Commons.Html {
 
+    static partial class Extensions {
+
+        internal static bool HasAttribute(this DomNode node, DomName name) {
+            return false;
+        }
+    }
     public static class HtmlElementExtensions {
 
         public static HtmlElement ClassName(this HtmlElement element, string className) {

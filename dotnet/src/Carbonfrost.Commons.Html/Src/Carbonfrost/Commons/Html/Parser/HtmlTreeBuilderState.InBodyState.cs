@@ -588,8 +588,9 @@ namespace Carbonfrost.Commons.Html.Parser {
                     inputAttribs["name"] = "isindex";
 
                     foreach (HtmlAttribute attr in startTag.Attributes) {
-                        if (!StringUtil.In(attr.Name, "name", "action", "prompt"))
+                        if (!StringUtil.In(attr.Name.LocalName, "name", "action", "prompt")) {
                             inputAttribs.Add(attr);
+                        }
                     }
 
                     tb.Process(inputStToken);

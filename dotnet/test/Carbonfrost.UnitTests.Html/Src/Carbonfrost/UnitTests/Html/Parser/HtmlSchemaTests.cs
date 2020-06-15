@@ -23,7 +23,7 @@ namespace Carbonfrost.UnitTests.Html {
 
         [Fact]
         public void Constructor_creates_HTML5_by_default() {
-            Assert.Equal("html5", new HtmlSchema().Name);
+            Assert.Equal("html5", new HtmlSchema().LocalName);
         }
 
         [Fact]

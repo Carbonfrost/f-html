@@ -74,7 +74,7 @@ namespace Carbonfrost.Commons.Html {
 
         protected override DomElementDefinition DomElementDefinition {
             get {
-                return this.FindSchema().GetTag(Name);
+                return this.FindSchema().GetTag(LocalName);
             }
         }
 

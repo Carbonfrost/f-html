@@ -19,6 +19,10 @@ using Carbonfrost.Commons.Web.Dom;
 namespace Carbonfrost.Commons.Html {
 
     public class HtmlAttributeDefinition : DomAttributeDefinition {
-        public HtmlAttributeDefinition(string name) : base(name) {}
+        public HtmlAttributeDefinition(string name) : base(DomName.Create(name)) {
+        }
+
+        public HtmlAttributeDefinition(DomName name) : base(name) {
+        }
     }
 }

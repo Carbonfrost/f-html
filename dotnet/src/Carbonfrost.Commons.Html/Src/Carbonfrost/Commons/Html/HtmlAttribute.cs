@@ -27,7 +27,8 @@ namespace Carbonfrost.Commons.Html {
 
         public bool IsDataAttribute {
             get {
-                return Name.StartsWith(DATA_PREFIX) && Name.Length > DATA_PREFIX.Length;
+                string name = LocalName;
+                return name.StartsWith(DATA_PREFIX) && name.Length > DATA_PREFIX.Length;
             }
         }
 
@@ -72,7 +73,7 @@ namespace Carbonfrost.Commons.Html {
         }
 
         protected override DomAttribute CloneCore() {
-            return new HtmlAttribute(Name, Value);
+            return new HtmlAttribute(LocalName, Value);
         }
     }
 }

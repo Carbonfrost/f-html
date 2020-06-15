@@ -25,16 +25,36 @@ namespace Carbonfrost.Commons.Html {
 
         private HtmlNodeTypeProvider() {}
 
+        public DomName GetAttributeName(Type attributeType) {
+            return null;
+        }
+
         public Type GetAttributeNodeType(string name) {
             return typeof(HtmlAttribute);
+        }
+
+        public Type GetAttributeNodeType(DomName name) {
+            return typeof(HtmlAttribute);
+        }
+
+        public DomName GetElementName(Type elementType) {
+            return null;
         }
 
         public Type GetElementNodeType(string name) {
             return typeof(HtmlElement);
         }
 
+        public Type GetElementNodeType(DomName name) {
+            return typeof(HtmlElement);
+        }
+
         public Type GetProcessingInstructionNodeType(string target) {
             return typeof(HtmlProcessingInstruction);
+        }
+
+        public string GetProcessingInstructionTarget(Type processingInstructionType) {
+            return null;
         }
     }
 }

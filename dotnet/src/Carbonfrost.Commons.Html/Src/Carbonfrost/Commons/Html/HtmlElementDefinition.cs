@@ -94,7 +94,7 @@ namespace Carbonfrost.Commons.Html {
             }
         }
 
-        internal HtmlElementDefinition(string tagName) : base(tagName) {
+        internal HtmlElementDefinition(string tagName) : base(DomName.Create(tagName)) {
             ElementNodeType = typeof(HtmlElement);
         }
 
@@ -103,7 +103,7 @@ namespace Carbonfrost.Commons.Html {
         }
 
         protected override DomNodeDefinition CloneCore() {
-            return new HtmlElementDefinition(Name) {
+            return new HtmlElementDefinition(LocalName) {
                 _flags = _flags,
                 WhitespaceMode = WhitespaceMode,
                 IsEmpty = IsEmpty,
